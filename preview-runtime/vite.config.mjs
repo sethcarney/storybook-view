@@ -9,10 +9,19 @@ export default defineConfig({
     cors: true,
     hmr: {
       overlay: true
+    },
+    fs: {
+      // Allow serving files from anywhere (needed for previewing components from different workspaces)
+      strict: false
     }
   },
   build: {
     outDir: 'dist',
     emptyOutDir: true
-  }
+  },
+  resolve: {
+    alias: {
+      '@component': 'c:/development/green-state-psych/ui/src/app/components'
+    }
+  },
 });

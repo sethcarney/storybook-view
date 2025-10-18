@@ -13,6 +13,7 @@ export class ReactPreviewPanel {
   private fileWatcher: vscode.FileSystemWatcher | undefined;
   private previewServer: PreviewServer;
   private isUpdating: boolean = false;
+  private updateTimeout: NodeJS.Timeout | undefined;
 
   private constructor(panel: vscode.WebviewPanel, extensionPath: string) {
     this.panel = panel;
@@ -84,14 +85,18 @@ export class ReactPreviewPanel {
       this.fileWatcher.dispose();
     }
 
+    // Watch ONLY the original component file, not the preview-runtime directory
     this.fileWatcher = vscode.workspace.createFileSystemWatcher(
       componentUri.fsPath
     );
+
     this.fileWatcher.onDidChange(() => {
       if (
         vscode.workspace.getConfiguration("reactview").get("autoRefresh", true)
       ) {
-        this.updatePreview();
+        // Don't reload on every change - Vite HMR handles it
+        // Just update the UserComponent.tsx file
+        this.debouncedUpdatePreview();
       }
     });
 
@@ -110,14 +115,29 @@ export class ReactPreviewPanel {
         );
       }
 
-      // Update preview
-      await this.updatePreview();
+      // Set initial HTML content
+      const componentInfo = this.parser.parseComponent(componentUri.fsPath);
+      await this.previewServer.loadComponent(componentUri.fsPath);
+      const port = this.previewServer.getPort();
+      this.panel.webview.html = this.getWebviewContent(port, componentInfo);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       vscode.window.showErrorMessage(
         `Failed to start preview server: ${message}`
       );
     }
+  }
+
+  private debouncedUpdatePreview() {
+    // Clear existing timeout
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+    }
+
+    // Debounce for 1 second to avoid rapid updates
+    this.updateTimeout = setTimeout(() => {
+      this.updatePreview();
+    }, 1000);
   }
 
   private async updatePreview() {
@@ -133,12 +153,11 @@ export class ReactPreviewPanel {
         this.currentComponentUri.fsPath
       );
 
-      // Copy component to preview-runtime
+      // Copy component to preview-runtime (Vite HMR will handle the update automatically)
       await this.previewServer.loadComponent(this.currentComponentUri.fsPath);
 
-      // Update webview HTML to iframe the Vite server
-      const port = this.previewServer.getPort();
-      this.panel.webview.html = this.getWebviewContent(port, componentInfo);
+      // Don't reload the iframe - Vite HMR will handle updates automatically
+      // We only set the HTML on initial load
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       vscode.window.showErrorMessage(`Failed to update preview: ${message}`);
@@ -161,29 +180,57 @@ export class ReactPreviewPanel {
             width: 100%;
             height: 100vh;
             overflow: hidden;
+            background-color: var(--vscode-editor-background);
         }
         iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
-        .loading {
+        .loading-container {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-center;
+            justify-content: center;
             height: 100vh;
             font-family: var(--vscode-font-family);
             color: var(--vscode-foreground);
         }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--vscode-progressBar-background);
+            border-top-color: var(--vscode-progressBar-foreground);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        .error {
+            color: var(--vscode-errorForeground);
+            background-color: var(--vscode-inputValidation-errorBackground);
+            border: 1px solid var(--vscode-inputValidation-errorBorder);
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-top: 16px;
+            max-width: 500px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div id="loading" class="loading">
-        Loading preview server...
+    <div id="loading" class="loading-container">
+        <div class="spinner"></div>
+        <div class="loading-text">Starting preview server...</div>
     </div>
     <iframe
         id="preview-frame"
-        src="http://localhost:${port}"
         style="display: none;"
         allow="cross-origin-isolated"
     ></iframe>
@@ -191,25 +238,64 @@ export class ReactPreviewPanel {
     <script>
         const iframe = document.getElementById('preview-frame');
         const loading = document.getElementById('loading');
+        const loadingText = document.querySelector('.loading-text');
 
-        iframe.onload = function() {
-            loading.style.display = 'none';
-            iframe.style.display = 'block';
+        let attempts = 0;
+        const maxAttempts = 30;
+        let checkInterval;
 
-            // Send component info to iframe
-            iframe.contentWindow.postMessage({
-                type: 'updateComponent',
-                componentInfo: ${JSON.stringify(componentInfo)},
-                props: {}
-            }, '*');
-        };
+        // Function to check if Vite server is ready
+        function checkServer() {
+            attempts++;
+            loadingText.textContent = \`Connecting to preview server... (\${attempts}/\${maxAttempts})\`;
 
-        // Handle timeout
-        setTimeout(() => {
-            if (iframe.style.display === 'none') {
-                loading.textContent = 'Preview server is taking longer than expected. Check if preview-runtime dependencies are installed.';
-            }
-        }, 10000);
+            fetch('http://localhost:${port}/')
+                .then(response => {
+                    if (response.ok) {
+                        clearInterval(checkInterval);
+                        loadingText.textContent = 'Loading component...';
+
+                        // Server is ready, load the iframe
+                        iframe.src = 'http://localhost:${port}';
+                        iframe.style.display = 'block';
+
+                        iframe.onload = function() {
+                            loading.style.display = 'none';
+
+                            // Send component info to iframe
+                            setTimeout(() => {
+                                iframe.contentWindow.postMessage({
+                                    type: 'updateComponent',
+                                    componentInfo: ${JSON.stringify(componentInfo)},
+                                    props: {}
+                                }, '*');
+                            }, 100);
+                        };
+                    }
+                })
+                .catch(err => {
+                    // Server not ready yet, continue polling
+                    if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        loading.innerHTML = \`
+                            <div class="spinner" style="display: none;"></div>
+                            <div class="error">
+                                <strong>Failed to connect to preview server</strong>
+                                <p style="margin: 8px 0 0 0; font-size: 12px;">
+                                    Make sure preview-runtime dependencies are installed:<br>
+                                    <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">
+                                        cd preview-runtime && npm install
+                                    </code>
+                                </p>
+                            </div>
+                        \`;
+                    }
+                });
+        }
+
+        // Start checking server availability
+        checkInterval = setInterval(checkServer, 1000);
+        checkServer(); // Check immediately
     </script>
 </body>
 </html>`;
@@ -217,6 +303,10 @@ export class ReactPreviewPanel {
 
   public dispose() {
     ReactPreviewPanel.currentPanel = undefined;
+
+    if (this.updateTimeout) {
+      clearTimeout(this.updateTimeout);
+    }
 
     if (this.fileWatcher) {
       this.fileWatcher.dispose();

@@ -13,6 +13,7 @@ export interface ComponentInfo {
   filePath: string;
   props: Record<string, PropInfo>;
   code: string;
+  exportType: "default" | "named";
 }
 
 export class ComponentParser {
@@ -20,12 +21,14 @@ export class ComponentParser {
     const code = fs.readFileSync(filePath, "utf-8");
     const componentName = this.extractComponentName(filePath, code);
     const props = this.extractProps(code);
+    const exportType = this.detectExportType(code, componentName);
 
     return {
       name: componentName,
       filePath,
       props,
-      code
+      code,
+      exportType
     };
   }
 
@@ -36,6 +39,14 @@ export class ComponentParser {
     );
     if (defaultExportMatch) {
       return defaultExportMatch[1];
+    }
+
+    // Try to extract from named export (more specific pattern)
+    const namedExportMatch = code.match(
+      /export\s+const\s+(\w+)\s*:\s*React\.FC/
+    );
+    if (namedExportMatch) {
+      return namedExportMatch[1];
     }
 
     // Try to extract from function declaration
@@ -117,5 +128,20 @@ export class ComponentParser {
     }
 
     return props;
+  }
+
+  private detectExportType(code: string, componentName: string): "default" | "named" {
+    // Check for default export
+    if (code.match(/export\s+default/)) {
+      return "default";
+    }
+
+    // Check for named export
+    if (code.match(new RegExp(`export\\s+(?:const|function|class)\\s+${componentName}`))) {
+      return "named";
+    }
+
+    // Default to named if we can't determine
+    return "named";
   }
 }

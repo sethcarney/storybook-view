@@ -8,27 +8,6 @@ const PreviewApp: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Try to load the user component
-    try {
-      const UserComponent = lazy(() =>
-        import("./UserComponent.tsx").catch(() => ({
-          default: () => (
-            <div
-              style={{ padding: "20px", textAlign: "center", color: "#999" }}
-            >
-              <p>
-                No component loaded. Open a React component in VSCode and click
-                the preview button.
-              </p>
-            </div>
-          )
-        }))
-      );
-      setComponent(() => UserComponent);
-    } catch (err: any) {
-      setError(err.message);
-    }
-
     // Notify extension that preview is ready
     window.parent?.postMessage({ type: "ready" }, "*");
 
@@ -36,13 +15,60 @@ const PreviewApp: React.FC = () => {
     const handleMessage = (event: MessageEvent) => {
       const { type, props: newProps, componentInfo: info } = event.data;
 
-      if (type === "updateProps") {
-        setProps(newProps || {});
-      } else if (type === "updateComponent") {
+      if (type === "updateComponent") {
         setComponentInfo(info);
         setProps(newProps || {});
-        // Force reload - Vite HMR will handle the actual update
-        window.location.reload();
+
+        // Load the component dynamically - handle both default and named exports
+        try {
+          const UserComponent = lazy(() =>
+            import("./UserComponent.tsx").then((module) => {
+              // If we know the export type from the parser
+              if (info?.exportType === "default") {
+                if (!module.default) {
+                  throw new Error("Expected default export but none found");
+                }
+                return { default: module.default };
+              } else if (info?.exportType === "named") {
+                const exportName = info.name;
+                if (!module[exportName]) {
+                  throw new Error(`Named export "${exportName}" not found`);
+                }
+                return { default: module[exportName] };
+              }
+
+              // Fallback: try default first, then named
+              if (module.default) {
+                return { default: module.default };
+              }
+
+              const exportName = info?.name;
+              if (exportName && module[exportName]) {
+                return { default: module[exportName] };
+              }
+
+              // Try to find any exported React component
+              const exportedComponent = Object.keys(module).find((key) => {
+                const value = module[key];
+                return typeof value === "function" || (value && value.$$typeof);
+              });
+
+              if (exportedComponent && module[exportedComponent]) {
+                return { default: module[exportedComponent] };
+              }
+
+              throw new Error(
+                `No valid React component found. Expected ${
+                  info?.exportType || "default or named"
+                } export${exportName ? ` "${exportName}"` : ""}`
+              );
+            })
+          );
+          setComponent(() => UserComponent);
+          setError(null);
+        } catch (err: any) {
+          setError(err.message);
+        }
       }
     };
 

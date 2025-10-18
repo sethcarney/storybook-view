@@ -117,31 +117,18 @@ export class PreviewServer {
   public async loadComponent(componentPath: string): Promise<void> {
     this.currentComponentPath = componentPath;
 
-    // Create a temporary component wrapper that Vite can serve
-    const componentName = path.basename(
-      componentPath,
-      path.extname(componentPath)
-    );
-    const componentContent = fs.readFileSync(componentPath, "utf8");
-
-    // Create a wrapper file in preview-runtime/src
+    // Just copy the component directly - keep it simple
+    const componentCode = fs.readFileSync(componentPath, 'utf8');
     const wrapperPath = path.join(
       this.previewRuntimePath,
       "src",
       "UserComponent.tsx"
     );
 
-    // Write the component content directly
-    fs.writeFileSync(wrapperPath, componentContent);
-
-    // Update PreviewApp to import from UserComponent
-    const previewAppPath = path.join(
-      this.previewRuntimePath,
-      "src",
-      "PreviewApp.tsx"
-    );
-    // The PreviewApp will be updated to dynamically import UserComponent
+    // Write the component code directly
+    fs.writeFileSync(wrapperPath, componentCode);
   }
+
 
   public stop(): void {
     if (this.viteProcess) {
