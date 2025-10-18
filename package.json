@@ -1,0 +1,92 @@
+{
+  "name": "reactview",
+  "displayName": "ReactView",
+  "description": "A React component previewer for MVVM views",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:javascriptreact",
+    "onLanguage:typescript",
+    "onLanguage:typescriptreact"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "reactview.openPreview",
+        "title": "Preview React Component",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "reactview.refreshPreview",
+        "title": "Refresh Preview",
+        "icon": "$(refresh)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "reactview.openPreview",
+          "when": "resourceExtname =~ /\\.(jsx|tsx)$/",
+          "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "reactview.openPreview",
+          "when": "resourceExtname =~ /\\.(jsx|tsx)$/",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ReactView",
+      "properties": {
+        "reactview.port": {
+          "type": "number",
+          "default": 3001,
+          "description": "Port for the preview server"
+        },
+        "reactview.autoRefresh": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically refresh preview on file changes"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package",
+    "install-extension": "code --install-extension reactview-0.0.1.vsix",
+    "setup": "node scripts/setup.js",
+    "dev": "node scripts/dev.js",
+    "test-app": "cd test-app && npm run dev"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
+    "@typescript-eslint/parser": "^5.45.0",
+    "eslint": "^8.28.0",
+    "typescript": "^4.9.4",
+    "@vscode/test-electron": "^2.2.0",
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0",
+    "chokidar": "^3.5.3"
+  }
+}
