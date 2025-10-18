@@ -1,37 +1,37 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-console.log('🔧 Setting up ReactView development environment...\n');
+console.log("🔧 Setting up ReactView development environment...\n");
 
 try {
   // Install main extension dependencies
-  console.log('📦 Installing extension dependencies...');
-  execSync('npm install', { stdio: 'inherit' });
+  console.log("📦 Installing extension dependencies...");
+  execSync("npm install", { stdio: "inherit" });
 
   // Install test app dependencies
-  console.log('📦 Installing test app dependencies...');
-  execSync('npm install', { 
-    stdio: 'inherit',
-    cwd: path.join(process.cwd(), 'test-app')
+  console.log("📦 Installing test app dependencies...");
+  execSync("npm install", {
+    stdio: "inherit",
+    cwd: path.join(process.cwd(), "test-app")
   });
 
   // Compile the extension
-  console.log('🔨 Compiling extension...');
-  execSync('npm run compile', { stdio: 'inherit' });
+  console.log("🔨 Compiling extension...");
+  execSync("npm run compile", { stdio: "inherit" });
 
   // Create launch configuration if it doesn't exist
-  const vscodeDir = path.join(process.cwd(), '.vscode');
-  const launchPath = path.join(vscodeDir, 'launch.json');
-  
+  const vscodeDir = path.join(process.cwd(), ".vscode");
+  const launchPath = path.join(vscodeDir, "launch.json");
+
   if (!fs.existsSync(vscodeDir)) {
     fs.mkdirSync(vscodeDir);
   }
 
   if (!fs.existsSync(launchPath)) {
-    console.log('⚙️  Creating VSCode launch configuration...');
+    console.log("⚙️  Creating VSCode launch configuration...");
     const launchConfig = {
       version: "0.2.0",
       configurations: [
@@ -39,12 +39,8 @@ try {
           name: "Run Extension",
           type: "extensionHost",
           request: "launch",
-          args: [
-            "--extensionDevelopmentPath=${workspaceFolder}"
-          ],
-          outFiles: [
-            "${workspaceFolder}/out/**/*.js"
-          ],
+          args: ["--extensionDevelopmentPath=${workspaceFolder}"],
+          outFiles: ["${workspaceFolder}/out/**/*.js"],
           preLaunchTask: "${workspaceFolder}/npm: compile"
         }
       ]
@@ -53,9 +49,9 @@ try {
   }
 
   // Create tasks configuration if it doesn't exist
-  const tasksPath = path.join(vscodeDir, 'tasks.json');
+  const tasksPath = path.join(vscodeDir, "tasks.json");
   if (!fs.existsSync(tasksPath)) {
-    console.log('⚙️  Creating VSCode tasks configuration...');
+    console.log("⚙️  Creating VSCode tasks configuration...");
     const tasksConfig = {
       version: "2.0.0",
       tasks: [
@@ -89,8 +85,7 @@ To start development:
 Test app will be available at: http://localhost:3000
 Extension preview server: http://localhost:3001 (when active)
 `);
-
 } catch (error) {
-  console.error('❌ Setup failed:', error.message);
+  console.error("❌ Setup failed:", error.message);
   process.exit(1);
 }

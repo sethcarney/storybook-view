@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 interface CardProps {
   title: string;
@@ -7,7 +7,7 @@ interface CardProps {
   showFooter?: boolean;
   footerContent?: React.ReactNode;
   className?: string;
-  variant?: 'default' | 'outlined' | 'elevated';
+  variant?: "default" | "outlined" | "elevated";
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -16,33 +16,30 @@ export const Card: React.FC<CardProps> = ({
   children,
   showFooter = true,
   footerContent,
-  className = '',
-  variant = 'default'
+  className = "",
+  variant = "default"
 }) => {
-  const baseClasses = 'rounded-lg overflow-hidden';
-  
+  const baseClasses = "rounded-lg overflow-hidden";
+
   const variantClasses = {
-    default: 'bg-white border border-gray-200',
-    outlined: 'bg-white border-2 border-gray-300',
-    elevated: 'bg-white shadow-lg border border-gray-100'
+    default: "bg-white border border-gray-200",
+    outlined: "bg-white border-2 border-gray-300",
+    elevated: "bg-white shadow-lg border border-gray-100"
   };
-  
-  const classes = `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
-  
+
+  const classes =
+    `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
+
   return (
     <div className={classes}>
       <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          {title}
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         {description && (
-          <p className="text-gray-600 text-sm mb-4">
-            {description}
-          </p>
+          <p className="text-gray-600 text-sm mb-4">{description}</p>
         )}
         {children}
       </div>
-      
+
       {showFooter && (
         <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
           {footerContent || (

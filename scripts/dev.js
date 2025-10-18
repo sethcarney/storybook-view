@@ -1,29 +1,29 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process');
-const path = require('path');
+const { spawn } = require("child_process");
+const path = require("path");
 
-console.log('🚀 Starting ReactView development environment...\n');
+console.log("🚀 Starting ReactView development environment...\n");
 
 // Start TypeScript compilation in watch mode
-console.log('📦 Compiling TypeScript extension...');
-const tscProcess = spawn('npm', ['run', 'watch'], {
-  stdio: 'inherit',
+console.log("📦 Compiling TypeScript extension...");
+const tscProcess = spawn("npm", ["run", "watch"], {
+  stdio: "inherit",
   shell: true,
   cwd: process.cwd()
 });
 
 // Start the test app development server
-console.log('🎯 Starting test app...');
-const testAppProcess = spawn('npm', ['run', 'dev'], {
-  stdio: 'inherit',
+console.log("🎯 Starting test app...");
+const testAppProcess = spawn("npm", ["run", "dev"], {
+  stdio: "inherit",
   shell: true,
-  cwd: path.join(process.cwd(), 'test-app')
+  cwd: path.join(process.cwd(), "test-app")
 });
 
 // Handle cleanup
-process.on('SIGINT', () => {
-  console.log('\n🛑 Shutting down development environment...');
+process.on("SIGINT", () => {
+  console.log("\n🛑 Shutting down development environment...");
   tscProcess.kill();
   testAppProcess.kill();
   process.exit(0);
