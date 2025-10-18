@@ -1,14 +1,8 @@
 import * as vscode from 'vscode';
-import { PreviewServer } from './previewServer';
-import { ComponentParser } from './componentParser';
-
-let previewServer: PreviewServer | undefined;
+import { ReactPreviewPanel } from './webviewPanel';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('ReactView extension is now active');
-
-    // Initialize preview server
-    previewServer = new PreviewServer(context);
 
     // Register commands
     const openPreviewCommand = vscode.commands.registerCommand('reactview.openPreview', async (uri?: vscode.Uri) => {
@@ -26,33 +20,24 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         try {
-            await previewServer?.openPreview(targetUri);
+            ReactPreviewPanel.createOrShow(context.extensionPath, targetUri);
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to open preview: ${error}`);
         }
     });
 
     const refreshPreviewCommand = vscode.commands.registerCommand('reactview.refreshPreview', () => {
-        previewServer?.refreshPreview();
-    });
-
-    // Watch for file changes
-    const watcher = vscode.workspace.createFileSystemWatcher('**/*.{jsx,tsx,js,ts}');
-    watcher.onDidChange((uri) => {
-        if (previewServer?.isWatching(uri)) {
-            previewServer.onFileChange(uri);
-        }
+        ReactPreviewPanel.refresh();
     });
 
     context.subscriptions.push(
         openPreviewCommand,
-        refreshPreviewCommand,
-        watcher
+        refreshPreviewCommand
     );
 }
 
 export function deactivate() {
-    previewServer?.dispose();
+    // Cleanup is handled by the webview panel disposal
 }
 
 function isReactFile(filePath: string): boolean {
