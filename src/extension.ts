@@ -1,6 +1,7 @@
+import * as fs from "fs";
 import * as vscode from "vscode";
-import { StorybookPreviewPanel } from "./webviewPanel";
 import { StorybookServer } from "./storybookServer";
+import { StorybookPreviewPanel } from "./webviewPanel";
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("Storybook View extension is now active");
@@ -26,8 +27,25 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
 
+      // If this is a .stories file, find the corresponding component file
+      let componentUri = targetUri;
+      if (targetUri.fsPath.includes(".stories.")) {
+        const componentPath = targetUri.fsPath.replace(
+          /\.stories\.(tsx|jsx)$/,
+          ".$1"
+        );
+        if (fs.existsSync(componentPath)) {
+          componentUri = vscode.Uri.file(componentPath);
+        } else {
+          vscode.window.showErrorMessage(
+            "Could not find corresponding component file"
+          );
+          return;
+        }
+      }
+
       try {
-        StorybookPreviewPanel.createOrShow(context.extensionPath, targetUri);
+        StorybookPreviewPanel.createOrShow(context.extensionPath, componentUri);
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to open preview: ${error}`);
       }
@@ -59,9 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
           }
         );
       } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to start Storybook: ${error}`
-        );
+        vscode.window.showErrorMessage(`Failed to start Storybook: ${error}`);
       }
     }
   );

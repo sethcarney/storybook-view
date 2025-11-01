@@ -29,10 +29,12 @@ npx storybook@latest init
 
 ### Usage
 
-1. Open a React component file (`.jsx` or `.tsx`)
-2. Click the **eye icon (👁️)** in the editor toolbar
+1. Open a React component's `.stories.tsx` or `.stories.jsx` file
+2. Click the **eye icon (👁️)** in the editor toolbar (appears only on `.stories` files)
 3. Storybook preview opens with all your component's stories
 4. Use Storybook's controls to interact with props
+
+**Note:** The eye icon only appears on `.stories` files to ensure your component has properly configured Storybook stories.
 
 That's it! The extension handles starting/stopping Storybook automatically.
 
@@ -42,16 +44,16 @@ Create a `.stories.tsx` file alongside your component:
 
 ```typescript
 // Button.stories.tsx
-import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from './Button';
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button } from "./Button";
 
 const meta = {
-  title: 'Components/Button',
+  title: "Components/Button",
   component: Button,
   parameters: {
-    layout: 'centered',
+    layout: "centered"
   },
-  tags: ['autodocs'],
+  tags: ["autodocs"]
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -59,16 +61,16 @@ type Story = StoryObj<typeof meta>;
 
 export const Primary: Story = {
   args: {
-    variant: 'primary',
-    children: 'Click me',
-  },
+    variant: "primary",
+    children: "Click me"
+  }
 };
 
 export const Secondary: Story = {
   args: {
-    variant: 'secondary',
-    children: 'Click me',
-  },
+    variant: "secondary",
+    children: "Click me"
+  }
 };
 ```
 
@@ -76,10 +78,10 @@ export const Secondary: Story = {
 
 Access via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
-| Command | Description |
-|---------|-------------|
-| **Storybook View: Start Storybook Server** | Manually start Storybook |
-| **Storybook View: Stop Storybook Server** | Stop the Storybook server |
+| Command                                       | Description                             |
+| --------------------------------------------- | --------------------------------------- |
+| **Storybook View: Start Storybook Server**    | Manually start Storybook                |
+| **Storybook View: Stop Storybook Server**     | Stop the Storybook server               |
 | **Storybook View: Open Storybook in Browser** | Open full Storybook in external browser |
 
 ## Configuration
@@ -95,10 +97,10 @@ Configure in VS Code settings (`File > Preferences > Settings`):
 
 ### Settings
 
-| Setting | Type | Default | Description |
-|---------|------|---------|-------------|
-| `storybookview.port` | `number` | `6006` | Port for the Storybook server |
-| `storybookview.autoRefresh` | `boolean` | `true` | Auto-refresh preview on file changes |
+| Setting                     | Type      | Default | Description                          |
+| --------------------------- | --------- | ------- | ------------------------------------ |
+| `storybookview.port`        | `number`  | `6006`  | Port for the Storybook server        |
+| `storybookview.autoRefresh` | `boolean` | `true`  | Auto-refresh preview on file changes |
 
 ## How It Works
 
@@ -150,6 +152,7 @@ export const Button: React.FC<ButtonProps> = ({
 ```
 
 **Storybook automatically generates:**
+
 - Dropdown controls for `variant` and `size`
 - Checkbox for `disabled`
 - Text input for `children`
@@ -161,11 +164,13 @@ export const Button: React.FC<ButtonProps> = ({
 ### Storybook Won't Start
 
 1. Ensure Storybook is installed in your project:
+
    ```bash
    npm install --save-dev @storybook/react-vite storybook
    ```
 
 2. Verify Storybook works standalone:
+
    ```bash
    npm run storybook
    ```
@@ -188,6 +193,7 @@ export const Button: React.FC<ButtonProps> = ({
 ## Screenshots
 
 ### Component Preview
+
 ![Screenshot](images/screenshot.png)
 
 ## Why Storybook View?
@@ -248,6 +254,7 @@ Contributions are welcome! Please open an issue or submit a pull request.
 ## Credits
 
 Built with:
+
 - [Storybook](https://storybook.js.org/) - Component development environment
 - [Vite](https://vitejs.dev/) - Build tool and dev server
 - [React](https://react.dev/) - UI library

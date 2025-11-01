@@ -66,14 +66,14 @@
       "editor/title": [
         {
           "command": "storybookview.openPreview",
-          "when": "resourceExtname =~ /\\.(jsx|tsx)$/",
+          "when": "resourceFilename =~ /\\.stories\\.(jsx|tsx)$/",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
           "command": "storybookview.openPreview",
-          "when": "resourceExtname =~ /\\.(jsx|tsx)$/",
+          "when": "resourceFilename =~ /\\.stories\\.(jsx|tsx)$/",
           "group": "navigation"
         }
       ]
