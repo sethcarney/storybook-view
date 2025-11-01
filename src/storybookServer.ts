@@ -10,6 +10,7 @@ export class StorybookServer {
   private testAppPath: string;
   private inactivityTimer: NodeJS.Timeout | undefined;
   private readonly INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+  private isIntentionalStop: boolean = false;
 
   private constructor(extensionPath: string) {
     this.testAppPath = path.join(extensionPath, "test-app");
@@ -133,12 +134,18 @@ export class StorybookServer {
 
       this.storybookProcess.on("exit", (code) => {
         console.log(`[Storybook] Exited with code ${code}`);
+        const wasIntentionalStop = this.isIntentionalStop;
         this.storybookProcess = undefined;
-        if (!serverStarted) {
+        this.isIntentionalStop = false; // Reset the flag
+
+        if (!serverStarted && !wasIntentionalStop) {
+          // Only reject if this was not an intentional stop
           const errorMsg = errorOutput
             ? `Storybook failed: ${errorOutput.substring(0, 500)}`
             : `Storybook failed to start (exit code: ${code})`;
           reject(new Error(errorMsg));
+        } else if (wasIntentionalStop) {
+          console.log("[Storybook] Server stopped intentionally");
         }
       });
 
@@ -157,6 +164,9 @@ export class StorybookServer {
 
   public stop(): void {
     console.log("[Storybook] Stopping Storybook server...");
+
+    // Mark this as an intentional stop to avoid error messages
+    this.isIntentionalStop = true;
 
     // Clear inactivity timer
     if (this.inactivityTimer) {
@@ -186,10 +196,10 @@ export class StorybookServer {
       console.log(
         "[Storybook] Inactivity timeout reached. Stopping Storybook..."
       );
-      vscode.window.showInformationMessage(
-        "Storybook stopped due to inactivity (5 minutes)"
-      );
       this.stop();
+      vscode.window.showInformationMessage(
+        "Storybook server automatically stopped due to inactivity (5 minutes)"
+      );
     }, this.INACTIVITY_TIMEOUT);
   }
 

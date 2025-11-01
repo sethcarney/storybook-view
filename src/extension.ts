@@ -80,7 +80,9 @@ export function activate(context: vscode.ExtensionContext) {
         );
       } else {
         storybookServer.stop();
-        vscode.window.showInformationMessage("Storybook stopped");
+        vscode.window.showInformationMessage(
+          "Storybook server has been terminated"
+        );
       }
     }
   );
