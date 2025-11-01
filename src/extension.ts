@@ -68,12 +68,19 @@ export function activate(context: vscode.ExtensionContext) {
 
   const stopStorybookCommand = vscode.commands.registerCommand(
     "storybookview.stopStorybook",
-    () => {
-      if (storybookServer.isRunning()) {
+    async () => {
+      const isRunning = await storybookServer.isRunning();
+      const canStop = storybookServer.canStop();
+
+      if (!isRunning) {
+        vscode.window.showInformationMessage("Storybook is not running");
+      } else if (!canStop) {
+        vscode.window.showWarningMessage(
+          "Storybook is running externally. Please stop it manually."
+        );
+      } else {
         storybookServer.stop();
         vscode.window.showInformationMessage("Storybook stopped");
-      } else {
-        vscode.window.showInformationMessage("Storybook is not running");
       }
     }
   );
@@ -81,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
   const openStorybookCommand = vscode.commands.registerCommand(
     "storybookview.openStorybook",
     async () => {
-      if (!storybookServer.isRunning()) {
+      if (!(await storybookServer.isRunning())) {
         const start = await vscode.window.showInformationMessage(
           "Storybook is not running. Would you like to start it?",
           "Start Storybook",
@@ -106,10 +113,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
 }
 
-export function deactivate() {
+export async function deactivate() {
   // Stop Storybook server on extension deactivation
   const storybookServer = StorybookServer.getInstance("");
-  if (storybookServer.isRunning()) {
+  if (await storybookServer.isRunning()) {
     storybookServer.stop();
   }
 }

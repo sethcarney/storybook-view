@@ -94,7 +94,7 @@ export class StorybookPreviewPanel {
 
     // Start Storybook server if not running
     try {
-      if (!this.storybookServer.isRunning()) {
+      if (!(await this.storybookServer.isRunning())) {
         await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,

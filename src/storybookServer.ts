@@ -30,6 +30,13 @@ export class StorybookServer {
       return this.port;
     }
 
+    // Check if Storybook is already running on the port
+    const isAlreadyRunning = await this.checkIfPortInUse(this.port);
+    if (isAlreadyRunning) {
+      console.log(`[Storybook] Server already running on port ${this.port}`);
+      return this.port;
+    }
+
     return new Promise((resolve, reject) => {
       // Check if test-app dependencies are installed
       const nodeModulesPath = path.join(this.testAppPath, "node_modules");
@@ -42,48 +49,74 @@ export class StorybookServer {
         return;
       }
 
-      // Start Storybook dev server
+      // Start Storybook dev server directly with CLI options
       const isWindows = process.platform === "win32";
-      const npmCmd = isWindows ? "npm.cmd" : "npm";
+      const npxCmd = isWindows ? "npx.cmd" : "npx";
 
       console.log("[Storybook] Starting Storybook server...");
 
-      this.storybookProcess = spawn(npmCmd, ["run", "storybook"], {
+      // Run storybook directly with specific CLI options
+      const storybookArgs = [
+        "storybook",
+        "dev",
+        "-p", this.port.toString(),
+        "--ci",                   // CI mode: skip prompts, don't open browser
+        "--quiet",                // Reduce console output noise
+        "--disable-telemetry",    // Disable telemetry for better performance
+        "--config-dir", ".storybook"  // Explicit config directory
+      ];
+
+      this.storybookProcess = spawn(npxCmd, storybookArgs, {
         cwd: this.testAppPath,
         shell: true,
         stdio: ["ignore", "pipe", "pipe"]
       });
+
+      console.log(`[Storybook] Process spawned (PID: ${this.storybookProcess.pid})`);
+      console.log(`[Storybook] Waiting for server to be ready on port ${this.port}...`);
 
       let serverStarted = false;
       let errorOutput = "";
 
       this.storybookProcess.stdout?.on("data", (data) => {
         const output = data.toString();
-        console.log("[Storybook]:", output);
+        console.log("[Storybook stdout]:", output);
 
-        // Look for Storybook server start message
-        if (
-          !serverStarted &&
-          (output.includes("Storybook") &&
-            (output.includes("started") || output.includes("localhost")))
-        ) {
-          serverStarted = true;
-          // Extract port from output if different from default
-          const portMatch = output.match(/:(\d+)/);
-          if (portMatch) {
-            this.port = parseInt(portMatch[1], 10);
+        // Look for Storybook server start message with more flexible detection
+        // Storybook 7+ uses different output formats, so check for multiple patterns
+        if (!serverStarted) {
+          const isStarted =
+            output.includes("started") ||
+            output.includes("Local:") ||
+            output.includes("localhost:") ||
+            output.match(/http:\/\/[^\s]+:\d+/) ||
+            (output.includes("Storybook") && output.match(/\d{1,5}/)) ||
+            output.includes("serving static files from");
+
+          if (isStarted) {
+            serverStarted = true;
+            // Extract port from output if present
+            const portMatch = output.match(/:(\d+)/);
+            if (portMatch) {
+              this.port = parseInt(portMatch[1], 10);
+            }
+            console.log(`[Storybook] Server detected as started on port ${this.port}`);
+            resolve(this.port);
           }
-          console.log(`[Storybook] Server started on port ${this.port}`);
-          resolve(this.port);
         }
       });
 
       this.storybookProcess.stderr?.on("data", (data) => {
         const error = data.toString();
-        errorOutput += error;
-        console.error("[Storybook Error]:", error);
+        console.log("[Storybook stderr]:", error);
 
-        // Only show critical errors
+        // Many "errors" are just warnings or info messages in stderr
+        // Only accumulate actual errors
+        if (error.includes("Error:") || error.includes("EADDRINUSE") || error.includes("failed")) {
+          errorOutput += error;
+        }
+
+        // Only show critical errors to user
         if (error.includes("Error:") || error.includes("EADDRINUSE")) {
           vscode.window.showErrorMessage(
             `Storybook Error: ${error.substring(0, 200)}`
@@ -109,13 +142,16 @@ export class StorybookServer {
         }
       });
 
-      // Timeout if server doesn't start in 60 seconds
+      // Timeout for initial detection - but don't kill the server
+      // The webview will continue polling and will connect once ready
       setTimeout(() => {
         if (!serverStarted) {
-          this.stop();
-          reject(new Error("Storybook start timeout"));
+          console.log("[Storybook] Detection timeout reached, but server may still be starting...");
+          console.log("[Storybook] Webview will continue polling until connection is established");
+          // Resolve anyway - let the webview handle the polling
+          resolve(this.port);
         }
-      }, 60000);
+      }, 120000); // Increased to 120 seconds
     });
   }
 
@@ -161,7 +197,18 @@ export class StorybookServer {
     return this.port;
   }
 
-  public isRunning(): boolean {
+  public async isRunning(): Promise<boolean> {
+    // Check both if we have a process and if the port is in use
+    if (this.storybookProcess) {
+      return true;
+    }
+    // Even if we don't have a process, check if port is in use
+    // (could be running externally)
+    return await this.checkIfPortInUse(this.port);
+  }
+
+  public canStop(): boolean {
+    // Can only stop if we started it (we have a process)
     return this.storybookProcess !== undefined;
   }
 
@@ -178,5 +225,25 @@ export class StorybookServer {
     const baseUrl = this.getUrl();
     const storyPath = `components-${componentName.toLowerCase()}--${storyName?.toLowerCase() || "default"}`;
     return `${baseUrl}/?path=/story/${storyPath}`;
+  }
+
+  /**
+   * Check if a port is already in use
+   */
+  private checkIfPortInUse(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const net = require('net');
+      const tester = net.createServer()
+        .once('error', () => {
+          // Port is in use
+          resolve(true);
+        })
+        .once('listening', () => {
+          // Port is available
+          tester.close();
+          resolve(false);
+        })
+        .listen(port);
+    });
   }
 }
