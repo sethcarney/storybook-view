@@ -41,7 +41,7 @@
     "commands": [
       {
         "command": "storybookview.openPreview",
-        "title": "Preview React Component",
+        "title": "Open Storybook Preview",
         "icon": "$(eye)"
       },
       {
