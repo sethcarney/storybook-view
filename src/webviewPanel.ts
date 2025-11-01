@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { StorybookServer } from "./storybookServer";
 
-export class ReactPreviewPanel {
-  private static currentPanel: ReactPreviewPanel | undefined;
+export class StorybookPreviewPanel {
+  private static currentPanel: StorybookPreviewPanel | undefined;
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionPath: string;
   private disposables: vscode.Disposable[] = [];
@@ -45,15 +45,15 @@ export class ReactPreviewPanel {
     const column = vscode.ViewColumn.Beside;
 
     // If we already have a panel, show it
-    if (ReactPreviewPanel.currentPanel) {
-      ReactPreviewPanel.currentPanel.panel.reveal(column);
-      await ReactPreviewPanel.currentPanel.setComponent(componentUri);
+    if (StorybookPreviewPanel.currentPanel) {
+      StorybookPreviewPanel.currentPanel.panel.reveal(column);
+      await StorybookPreviewPanel.currentPanel.setComponent(componentUri);
       return;
     }
 
     // Otherwise, create a new panel
     const panel = vscode.window.createWebviewPanel(
-      "reactPreview",
+      "storybookPreview",
       "Storybook Preview",
       column,
       {
@@ -63,20 +63,18 @@ export class ReactPreviewPanel {
       }
     );
 
-    ReactPreviewPanel.currentPanel = new ReactPreviewPanel(
+    StorybookPreviewPanel.currentPanel = new StorybookPreviewPanel(
       panel,
       extensionPath
     );
-    await ReactPreviewPanel.currentPanel.setComponent(componentUri);
+    await StorybookPreviewPanel.currentPanel.setComponent(componentUri);
   }
 
   public async setComponent(componentUri: vscode.Uri) {
     this.currentComponentUri = componentUri;
 
-    // Update panel title with component name
     const fileName = path.basename(componentUri.fsPath);
     const componentName = this.getComponentName(fileName);
-    this.panel.title = `Storybook: ${componentName}`;
 
     // Set up file watcher - watch the specific component file
     if (this.fileWatcher) {
@@ -268,7 +266,7 @@ export class ReactPreviewPanel {
   }
 
   public dispose() {
-    ReactPreviewPanel.currentPanel = undefined;
+    StorybookPreviewPanel.currentPanel = undefined;
 
     if (this.fileWatcher) {
       this.fileWatcher.dispose();
@@ -285,10 +283,10 @@ export class ReactPreviewPanel {
   }
 
   public static refresh() {
-    if (ReactPreviewPanel.currentPanel && ReactPreviewPanel.currentPanel.currentComponentUri) {
+    if (StorybookPreviewPanel.currentPanel && StorybookPreviewPanel.currentPanel.currentComponentUri) {
       // Reload the component
-      ReactPreviewPanel.currentPanel.setComponent(
-        ReactPreviewPanel.currentPanel.currentComponentUri
+      StorybookPreviewPanel.currentPanel.setComponent(
+        StorybookPreviewPanel.currentPanel.currentComponentUri
       );
     }
   }

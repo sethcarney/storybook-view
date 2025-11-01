@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ReactView is a Visual Studio Code extension that provides Storybook integration for React components. The extension allows developers to preview their React components with all Storybook features directly within VSCode.
+Storybook View is a Visual Studio Code extension that provides Storybook integration for React components. The extension allows developers to preview their React components with all Storybook features directly within VSCode.
 
 The extension consists of:
 
@@ -120,16 +120,16 @@ export const Variant: Story = {
 
 The extension provides these commands (accessible via Command Palette):
 
-- **ReactView: Start Storybook Server** - Manually start Storybook
-- **ReactView: Stop Storybook Server** - Manually stop Storybook
-- **ReactView: Open Storybook in Browser** - Open full Storybook in external browser
+- **Storybook View: Start Storybook Server** - Manually start Storybook
+- **Storybook View: Stop Storybook Server** - Manually stop Storybook
+- **Storybook View: Open Storybook in Browser** - Open full Storybook in external browser
 
 ## Configuration Settings
 
 Available in VSCode settings:
 
-- `reactview.port`: Storybook server port (default: 6006)
-- `reactview.autoRefresh`: Auto-refresh on file changes (default: true)
+- `storybookview.port`: Storybook server port (default: 6006)
+- `storybookview.autoRefresh`: Auto-refresh on file changes (default: true)
 
 ## Development Notes
 
@@ -173,7 +173,7 @@ Available in VSCode settings:
 
 - Extension logs appear in VSCode Debug Console (when pressing F5)
 - Storybook server logs appear with `[Storybook]` prefix
-- Check `Output > ReactView` panel for runtime information
+- Check `Output > Storybook View` panel for runtime information
 
 ## Dependencies
 
@@ -193,7 +193,7 @@ Available in VSCode settings:
 ## Project Structure
 
 ```
-ReactView/
+storybook-view/
 ├── src/                        # Extension source code
 │   ├── extension.ts           # Main entry point
 │   ├── storybookServer.ts     # Storybook server manager

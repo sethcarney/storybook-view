@@ -1,6 +1,6 @@
 {
-  "name": "reactview",
-  "displayName": "ReactView",
+  "name": "storybook-view",
+  "displayName": "Storybook View",
   "description": "Storybook integration for VSCode - preview React components with all Storybook features",
   "version": "0.0.1",
   "engines": {
@@ -19,53 +19,53 @@
   "contributes": {
     "commands": [
       {
-        "command": "reactview.openPreview",
+        "command": "storybookview.openPreview",
         "title": "Preview React Component",
         "icon": "$(eye)"
       },
       {
-        "command": "reactview.refreshPreview",
+        "command": "storybookview.refreshPreview",
         "title": "Refresh Preview",
         "icon": "$(refresh)"
       },
       {
-        "command": "reactview.startStorybook",
-        "title": "ReactView: Start Storybook Server"
+        "command": "storybookview.startStorybook",
+        "title": "Storybook View: Start Storybook Server"
       },
       {
-        "command": "reactview.stopStorybook",
-        "title": "ReactView: Stop Storybook Server"
+        "command": "storybookview.stopStorybook",
+        "title": "Storybook View: Stop Storybook Server"
       },
       {
-        "command": "reactview.openStorybook",
-        "title": "ReactView: Open Storybook in Browser"
+        "command": "storybookview.openStorybook",
+        "title": "Storybook View: Open Storybook in Browser"
       }
     ],
     "menus": {
       "editor/title": [
         {
-          "command": "reactview.openPreview",
+          "command": "storybookview.openPreview",
           "when": "resourceExtname =~ /\\.(jsx|tsx)$/",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
-          "command": "reactview.openPreview",
+          "command": "storybookview.openPreview",
           "when": "resourceExtname =~ /\\.(jsx|tsx)$/",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
-      "title": "ReactView",
+      "title": "Storybook View",
       "properties": {
-        "reactview.port": {
+        "storybookview.port": {
           "type": "number",
           "default": 6006,
           "description": "Port for the Storybook server"
         },
-        "reactview.autoRefresh": {
+        "storybookview.autoRefresh": {
           "type": "boolean",
           "default": true,
           "description": "Automatically refresh preview on file changes"
@@ -81,7 +81,7 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "package": "vsce package",
-    "install-extension": "code --install-extension reactview-0.0.1.vsix",
+    "install-extension": "code --install-extension storybook-view-0.0.1.vsix",
     "setup": "node scripts/setup.js",
     "dev": "node scripts/dev.js",
     "storybook": "cd test-app && npm run storybook"

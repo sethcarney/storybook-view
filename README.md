@@ -1,4 +1,4 @@
-# ReactView
+# Storybook View
 
 A Visual Studio Code extension that integrates Storybook directly into your IDE. Preview your React components with all Storybook features without leaving your editor.
 
@@ -29,7 +29,7 @@ npx storybook@latest init
 
 1. Open Visual Studio Code
 2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "ReactView"
+3. Search for "Storybook View"
 4. Click Install
 
 ### Manual Installation (Development)
@@ -87,9 +87,9 @@ export const Secondary: Story = {
 
 Access via Command Palette (Ctrl+Shift+P):
 
-- **ReactView: Start Storybook Server** - Manually start Storybook
-- **ReactView: Stop Storybook Server** - Stop the Storybook server
-- **ReactView: Open Storybook in Browser** - Open full Storybook in external browser
+- **Storybook View: Start Storybook Server** - Manually start Storybook
+- **Storybook View: Stop Storybook Server** - Stop the Storybook server
+- **Storybook View: Open Storybook in Browser** - Open full Storybook in external browser
 
 ### Configuration
 
@@ -97,13 +97,13 @@ Configure in VS Code settings (File > Preferences > Settings):
 
 ```json
 {
-  "reactview.port": 6006,
-  "reactview.autoRefresh": true
+  "storybookview.port": 6006,
+  "storybookview.autoRefresh": true
 }
 ```
 
-- `reactview.port`: Storybook server port (default: 6006)
-- `reactview.autoRefresh`: Auto-refresh preview on file changes (default: true)
+- `storybookview.port`: Storybook server port (default: 6006)
+- `storybookview.autoRefresh`: Auto-refresh preview on file changes (default: true)
 
 ## How It Works
 
@@ -202,8 +202,8 @@ Storybook automatically generates:
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/reactview.git
-cd reactview
+git clone https://github.com/yourusername/storybook-view.git
+cd storybook-view
 npm run setup
 npm run compile
 ```

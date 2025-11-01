@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import { ReactPreviewPanel } from "./webviewPanel";
+import { StorybookPreviewPanel } from "./webviewPanel";
 import { StorybookServer } from "./storybookServer";
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log("ReactView extension is now active");
+  console.log("Storybook View extension is now active");
 
   const storybookServer = StorybookServer.getInstance(context.extensionPath);
 
   // Register commands
   const openPreviewCommand = vscode.commands.registerCommand(
-    "reactview.openPreview",
+    "storybookview.openPreview",
     async (uri?: vscode.Uri) => {
       const activeEditor = vscode.window.activeTextEditor;
       const targetUri = uri || activeEditor?.document.uri;
@@ -27,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
       }
 
       try {
-        ReactPreviewPanel.createOrShow(context.extensionPath, targetUri);
+        StorybookPreviewPanel.createOrShow(context.extensionPath, targetUri);
       } catch (error) {
         vscode.window.showErrorMessage(`Failed to open preview: ${error}`);
       }
@@ -35,14 +35,14 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const refreshPreviewCommand = vscode.commands.registerCommand(
-    "reactview.refreshPreview",
+    "storybookview.refreshPreview",
     () => {
-      ReactPreviewPanel.refresh();
+      StorybookPreviewPanel.refresh();
     }
   );
 
   const startStorybookCommand = vscode.commands.registerCommand(
-    "reactview.startStorybook",
+    "storybookview.startStorybook",
     async () => {
       try {
         await vscode.window.withProgress(
@@ -67,7 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const stopStorybookCommand = vscode.commands.registerCommand(
-    "reactview.stopStorybook",
+    "storybookview.stopStorybook",
     () => {
       if (storybookServer.isRunning()) {
         storybookServer.stop();
@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   const openStorybookCommand = vscode.commands.registerCommand(
-    "reactview.openStorybook",
+    "storybookview.openStorybook",
     async () => {
       if (!storybookServer.isRunning()) {
         const start = await vscode.window.showInformationMessage(
@@ -88,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
           "Cancel"
         );
         if (start === "Start Storybook") {
-          await vscode.commands.executeCommand("reactview.startStorybook");
+          await vscode.commands.executeCommand("storybookview.startStorybook");
         } else {
           return;
         }
