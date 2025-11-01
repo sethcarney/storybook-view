@@ -115,9 +115,18 @@ export function activate(context: vscode.ExtensionContext) {
 
 export async function deactivate() {
   // Stop Storybook server on extension deactivation
-  const storybookServer = StorybookServer.getInstance("");
-  if (await storybookServer.isRunning()) {
-    storybookServer.stop();
+  console.log("[Extension] Deactivating - cleaning up Storybook server...");
+  try {
+    const storybookServer = StorybookServer.getInstance("");
+    const isRunning = await storybookServer.isRunning();
+    const canStop = storybookServer.canStop();
+
+    if (isRunning && canStop) {
+      console.log("[Extension] Stopping Storybook server...");
+      storybookServer.stop();
+    }
+  } catch (error) {
+    console.error("[Extension] Error during deactivation:", error);
   }
 }
 

@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
 import * as path from "path";
+import * as vscode from "vscode";
 import { StorybookServer } from "./storybookServer";
 
 export class StorybookPreviewPanel {
@@ -92,42 +92,39 @@ export class StorybookPreviewPanel {
       this.storybookServer.resetInactivityTimer();
     });
 
-    // Start Storybook server if not running
+    // Show webview immediately with loading state
+    const storybookUrl = this.getStorybookUrl(componentName);
+    this.panel.webview.html = this.getWebviewContent(
+      storybookUrl,
+      componentName
+    );
+
+    // Start Storybook server if not running (don't wait - let webview poll)
     try {
       if (!(await this.storybookServer.isRunning())) {
-        await vscode.window.withProgress(
-          {
-            location: vscode.ProgressLocation.Notification,
-            title: "Starting Storybook...",
-            cancellable: false
-          },
-          async () => {
-            await this.storybookServer.start();
-          }
-        );
+        // Start server in background - don't await
+        this.storybookServer.start().catch((error) => {
+          const message =
+            error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(
+            `Failed to start Storybook: ${message}`
+          );
+        });
       } else {
         // Reset inactivity timer if already running
         this.storybookServer.resetInactivityTimer();
       }
-
-      // Get component name from filename
-      const componentName = this.getComponentName(fileName);
-
-      // Try to find the story URL, otherwise just show Storybook home
-      const storybookUrl = this.getStorybookUrl(componentName);
-
-      this.panel.webview.html = this.getWebviewContent(storybookUrl, componentName);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       vscode.window.showErrorMessage(
-        `Failed to start Storybook: ${message}`
+        `Failed to check Storybook status: ${message}`
       );
     }
   }
 
   private getComponentName(fileName: string): string {
     // Remove file extension
-    return fileName.replace(/\.(tsx|jsx|ts|js)$/, '');
+    return fileName.replace(/\.(tsx|jsx|ts|js)$/, "");
   }
 
   private getStorybookUrl(componentName: string): string {
@@ -138,7 +135,10 @@ export class StorybookPreviewPanel {
     return `${baseUrl}/?path=/docs/${docsPath}`;
   }
 
-  private getWebviewContent(storybookUrl: string, componentName: string): string {
+  private getWebviewContent(
+    storybookUrl: string,
+    componentName: string
+  ): string {
     const port = this.storybookServer.getPort();
     return `<!DOCTYPE html>
 <html lang="en">
@@ -214,13 +214,13 @@ export class StorybookPreviewPanel {
         const loadingText = document.querySelector('.loading-text');
 
         let attempts = 0;
-        const maxAttempts = 60; // Storybook takes longer to start
+        const maxAttempts = 30; // 30 seconds timeout
         let checkInterval;
 
         // Function to check if Storybook server is ready
         function checkServer() {
             attempts++;
-            loadingText.textContent = \`Connecting to Storybook... (\${attempts}/\${maxAttempts})\`;
+            loadingText.textContent = \`Starting Storybook... (\${attempts}s)\`;
 
             fetch('http://localhost:${port}/')
                 .then(response => {
@@ -244,12 +244,15 @@ export class StorybookPreviewPanel {
                         loading.innerHTML = \`
                             <div class="spinner" style="display: none;"></div>
                             <div class="error">
-                                <strong>Failed to connect to Storybook</strong>
-                                <p style="margin: 8px 0 0 0; font-size: 12px;">
-                                    Make sure test-app dependencies are installed:<br>
-                                    <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">
-                                        cd test-app && npm install
-                                    </code>
+                                <strong>Storybook failed to start</strong>
+                                <p style="margin: 12px 0 8px 0; font-size: 13px; line-height: 1.5;">
+                                    The Storybook server didn't respond within 30 seconds.
+                                </p>
+                                <p style="margin: 8px 0; font-size: 12px; line-height: 1.5; opacity: 0.9;">
+                                    Please close this window and try again. If the problem persists:<br>
+                                    1. Make sure dependencies are installed: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">cd test-app && npm install</code><br>
+                                    2. Check the Debug Console for error messages<br>
+                                    3. Try manually running: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">cd test-app && npm run storybook</code>
                                 </p>
                             </div>
                         \`;
@@ -283,7 +286,10 @@ export class StorybookPreviewPanel {
   }
 
   public static refresh() {
-    if (StorybookPreviewPanel.currentPanel && StorybookPreviewPanel.currentPanel.currentComponentUri) {
+    if (
+      StorybookPreviewPanel.currentPanel &&
+      StorybookPreviewPanel.currentPanel.currentComponentUri
+    ) {
       // Reload the component
       StorybookPreviewPanel.currentPanel.setComponent(
         StorybookPreviewPanel.currentPanel.currentComponentUri
