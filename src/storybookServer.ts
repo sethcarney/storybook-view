@@ -79,6 +79,22 @@ export class StorybookServer {
       let serverStarted = false;
       let errorOutput = "";
 
+      // Poll the port to detect when server is ready (fallback if stdout parsing fails)
+      const pollInterval = setInterval(async () => {
+        if (serverStarted) {
+          clearInterval(pollInterval);
+          return;
+        }
+
+        const isPortResponding = await this.checkIfPortResponding(this.port);
+        if (isPortResponding) {
+          serverStarted = true;
+          clearInterval(pollInterval);
+          console.log(`[Storybook] Server detected as ready via port polling on port ${this.port}`);
+          resolve(this.port);
+        }
+      }, 2000); // Check every 2 seconds
+
       this.storybookProcess.stdout?.on("data", (data) => {
         const output = data.toString();
         console.log("[Storybook stdout]:", output);
@@ -96,12 +112,13 @@ export class StorybookServer {
 
           if (isStarted) {
             serverStarted = true;
+            clearInterval(pollInterval);
             // Extract port from output if present
             const portMatch = output.match(/:(\d+)/);
             if (portMatch) {
               this.port = parseInt(portMatch[1], 10);
             }
-            console.log(`[Storybook] Server detected as started on port ${this.port}`);
+            console.log(`[Storybook] Server detected as started via stdout on port ${this.port}`);
             resolve(this.port);
           }
         }
@@ -134,6 +151,7 @@ export class StorybookServer {
 
       this.storybookProcess.on("exit", (code) => {
         console.log(`[Storybook] Exited with code ${code}`);
+        clearInterval(pollInterval);
         const wasIntentionalStop = this.isIntentionalStop;
         this.storybookProcess = undefined;
         this.isIntentionalStop = false; // Reset the flag
@@ -153,12 +171,13 @@ export class StorybookServer {
       // The webview will continue polling and will connect once ready
       setTimeout(() => {
         if (!serverStarted) {
+          clearInterval(pollInterval);
           console.log("[Storybook] Detection timeout reached, but server may still be starting...");
           console.log("[Storybook] Webview will continue polling until connection is established");
           // Resolve anyway - let the webview handle the polling
           resolve(this.port);
         }
-      }, 120000); // Increased to 120 seconds
+      }, 60000); // 60 seconds - reduced since we have port polling now
     });
   }
 
@@ -254,6 +273,30 @@ export class StorybookServer {
           resolve(false);
         })
         .listen(port);
+    });
+  }
+
+  /**
+   * Check if the Storybook server is responding to HTTP requests
+   */
+  private async checkIfPortResponding(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      const http = require('http');
+      const request = http.get(`http://localhost:${port}/`, (res: any) => {
+        // Any response means server is up
+        resolve(res.statusCode === 200);
+        request.destroy();
+      });
+
+      request.on('error', () => {
+        // Server not responding yet
+        resolve(false);
+      });
+
+      request.setTimeout(1000, () => {
+        request.destroy();
+        resolve(false);
+      });
     });
   }
 }
