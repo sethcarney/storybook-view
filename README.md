@@ -1,53 +1,42 @@
-# Storybook View
+# Storybook View for VSCode
 
-A Visual Studio Code extension that integrates Storybook directly into your IDE. Preview your React components with all Storybook features without leaving your editor.
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/storybook-view)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+> **Storybook integration for Visual Studio Code** - Preview your React components with all Storybook features directly in your editor.
 
 ## Features
 
-- 📚 **Storybook Integration**: Full Storybook experience within VSCode
-- 👁️ **One-Click Preview**: Click the eye icon to view any component's stories
-- 🎨 **Interactive Controls**: Use Storybook's powerful prop controls and addons
-- 🔄 **Hot Module Replacement**: Instant updates when you edit components
-- ⚡ **Smart Lifecycle**: Auto-starts Storybook when needed, stops after inactivity
-- 📖 **Auto Documentation**: Generates docs from TypeScript types
-- ♿ **Accessibility**: Built-in a11y testing with Storybook addons
-- 🎯 **Multiple Variations**: See all story variants in one view
+- **📚 Full Storybook Integration** - Access all Storybook features, controls, and addons
+- **👁️ One-Click Preview** - Click the eye icon on any component to view its stories
+- **🔄 Hot Module Replacement** - Instant updates when you edit components
+- **⚡ Smart Lifecycle** - Auto-starts when needed, stops after 5 minutes of inactivity
+- **📖 Auto Documentation** - Generates component docs from TypeScript types
+- **🎯 All Variations** - View all story variants in one unified interface
+- **♿ Accessibility Testing** - Built-in a11y testing with Storybook addons
 
-## Requirements
+![Storybook View Demo](images/demo-recording.gif)
 
-**Storybook must be installed in your project.**
+## Quick Start
 
-This extension wraps your existing Storybook setup. If you don't have Storybook installed:
+### Prerequisites
+
+This extension requires Storybook to be installed in your project. If you don't have it:
 
 ```bash
 npx storybook@latest init
 ```
 
-## Installation
-
-### From Marketplace (Coming Soon)
-
-1. Open Visual Studio Code
-2. Go to Extensions (Ctrl+Shift+X)
-3. Search for "Storybook View"
-4. Click Install
-
-### Manual Installation (Development)
-
-1. Clone this repository
-2. Run `npm run setup` to install dependencies
-3. Press F5 to launch the extension in Extension Development Host
-
-## Usage
-
-### Basic Usage
+### Usage
 
 1. Open a React component file (`.jsx` or `.tsx`)
-2. Click the eye icon (👁️) in the editor toolbar
-3. Storybook preview opens showing all your component's stories
-4. Interact with props using Storybook's controls panel
+2. Click the **eye icon (👁️)** in the editor toolbar
+3. Storybook preview opens with all your component's stories
+4. Use Storybook's controls to interact with props
 
-### Creating Stories
+That's it! The extension handles starting/stopping Storybook automatically.
+
+## Creating Stories
 
 Create a `.stories.tsx` file alongside your component:
 
@@ -83,17 +72,19 @@ export const Secondary: Story = {
 };
 ```
 
-### Available Commands
+## Commands
 
-Access via Command Palette (Ctrl+Shift+P):
+Access via Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`):
 
-- **Storybook View: Start Storybook Server** - Manually start Storybook
-- **Storybook View: Stop Storybook Server** - Stop the Storybook server
-- **Storybook View: Open Storybook in Browser** - Open full Storybook in external browser
+| Command | Description |
+|---------|-------------|
+| **Storybook View: Start Storybook Server** | Manually start Storybook |
+| **Storybook View: Stop Storybook Server** | Stop the Storybook server |
+| **Storybook View: Open Storybook in Browser** | Open full Storybook in external browser |
 
-### Configuration
+## Configuration
 
-Configure in VS Code settings (File > Preferences > Settings):
+Configure in VS Code settings (`File > Preferences > Settings`):
 
 ```json
 {
@@ -102,25 +93,30 @@ Configure in VS Code settings (File > Preferences > Settings):
 }
 ```
 
-- `storybookview.port`: Storybook server port (default: 6006)
-- `storybookview.autoRefresh`: Auto-refresh preview on file changes (default: true)
+### Settings
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `storybookview.port` | `number` | `6006` | Port for the Storybook server |
+| `storybookview.autoRefresh` | `boolean` | `true` | Auto-refresh preview on file changes |
 
 ## How It Works
 
-### Lifecycle Management
+### Intelligent Lifecycle Management
 
-1. **Auto-Start**: Storybook starts automatically when you preview a component (takes ~30-60 seconds first time)
-2. **Stays Running**: Remains active for quick switching between components
+1. **Auto-Start**: First preview takes ~10-20 seconds as Storybook starts
+2. **Stays Running**: Subsequent previews are instant (no restart needed)
 3. **Auto-Stop**: Stops after 5 minutes of inactivity to save resources
-4. **Timer Reset**: Activity resets timer (opening previews, editing files)
+4. **Timer Reset**: Opening previews or editing files resets the inactivity timer
 
 ### What You Get
 
-- **All Storybook Features**: Controls, actions, docs, a11y testing, and all addons
-- **Professional Development**: Industry-standard tool used by major companies
-- **Comprehensive Testing**: Test components with different prop combinations
-- **Auto-Generated Docs**: Documentation from TypeScript interfaces
-- **Collaborative**: Share Storybook URL with team members
+✅ **All Storybook Features**: Controls, actions, docs, a11y testing, and all addons
+✅ **Industry Standard Tool**: Used by React, Material-UI, Ant Design, and thousands of teams
+✅ **Auto-Generated Controls**: Type-safe prop controls from TypeScript interfaces
+✅ **Professional Testing**: Test components with different prop combinations
+✅ **Rich Documentation**: Auto-docs generated from your code
+✅ **Team Collaboration**: Share Storybook URLs with designers and stakeholders
 
 ## Example Component
 
@@ -153,7 +149,7 @@ export const Button: React.FC<ButtonProps> = ({
 };
 ```
 
-Storybook automatically generates:
+**Storybook automatically generates:**
 - Dropdown controls for `variant` and `size`
 - Checkbox for `disabled`
 - Text input for `children`
@@ -164,14 +160,16 @@ Storybook automatically generates:
 
 ### Storybook Won't Start
 
-1. Ensure Storybook is installed in your project
+1. Ensure Storybook is installed in your project:
    ```bash
    npm install --save-dev @storybook/react-vite storybook
    ```
+
 2. Verify Storybook works standalone:
    ```bash
    npm run storybook
    ```
+
 3. Check that port 6006 is available
 
 ### Component Not Showing
@@ -179,61 +177,82 @@ Storybook automatically generates:
 1. Ensure you have a `.stories.tsx` file for your component
 2. Verify the story file is in a location Storybook scans
 3. Check Storybook configuration in `.storybook/main.ts`
-4. Restart Storybook using Command Palette
+4. Restart Storybook using Command Palette: "Storybook View: Stop Storybook Server" then preview again
 
 ### Preview Shows Wrong Content
 
 1. Close the preview panel
 2. Click the eye icon again on the correct component
-3. Panel title should show the component name
+3. Panel title should update to show the component name
 
-## Benefits Over Custom Previews
+## Screenshots
 
-✅ **Mature Ecosystem**: Leverage years of Storybook development
-✅ **Rich Addons**: A11y, viewport testing, design integration, and more
-✅ **Industry Standard**: Used by React, Material-UI, Ant Design, and thousands of teams
+### Component Preview
+![Screenshot](images/screenshot.png)
+
+## Why Storybook View?
+
+### Better Than Custom Previews
+
+✅ **Mature Ecosystem**: Leverage years of Storybook development and community
+✅ **Rich Addons**: A11y, viewport testing, design integration, interactions, and more
+✅ **Zero Setup**: Uses your existing Storybook configuration
 ✅ **Better Controls**: Auto-generated, type-safe prop controls
-✅ **Documentation**: Auto-docs from your TypeScript types
-✅ **Testing**: Built-in interaction testing and visual regression
-✅ **Collaboration**: Share preview URLs with designers and stakeholders
+✅ **Built-in Testing**: Interaction testing and visual regression support
 
-## Development
+### Integrates with Your Workflow
+
+- **No Context Switching**: Preview components without leaving VSCode
+- **Fast Iteration**: Edit and see changes instantly with HMR
+- **Team-Friendly**: Everyone uses the same Storybook setup
+- **Production-Ready**: Same tool for development, documentation, and testing
+
+## Requirements
+
+- Visual Studio Code 1.74.0 or higher
+- Node.js 16 or higher
+- Storybook 7+ installed in your project
+
+## Development & Contributing
 
 ### Building from Source
 
 ```bash
 git clone https://github.com/yourusername/storybook-view.git
 cd storybook-view
-npm run setup
+npm install
 npm run compile
 ```
 
-### Testing the Extension
+### Testing Locally
 
 ```bash
-npm run dev  # Start compilation + test app
-# Press F5 in VSCode to launch Extension Development Host
+npm run dev  # Start TypeScript compilation in watch mode
 ```
 
-### Package for Distribution
+Press `F5` in VSCode to launch the Extension Development Host.
+
+### Package for Installation
 
 ```bash
 npm run package
 npm run install-extension
 ```
 
+Contributions are welcome! Please open an issue or submit a pull request.
+
 ## License
 
-MIT
-
-## Contributing
-
-Contributions welcome! Please open an issue or submit a pull request.
+[MIT](LICENSE) © Your Name
 
 ## Credits
 
 Built with:
 - [Storybook](https://storybook.js.org/) - Component development environment
-- [Vite](https://vitejs.dev/) - Build tool
+- [Vite](https://vitejs.dev/) - Build tool and dev server
 - [React](https://react.dev/) - UI library
 - [TypeScript](https://www.typescriptlang.org/) - Type safety
+
+---
+
+**Enjoying Storybook View?** Star the repo on [GitHub](https://github.com/yourusername/storybook-view) and rate it on the [VSCode Marketplace](https://marketplace.visualstudio.com/)!

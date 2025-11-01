@@ -1,12 +1,33 @@
 {
   "name": "storybook-view",
   "displayName": "Storybook View",
-  "description": "Storybook integration for VSCode - preview React components with all Storybook features",
-  "version": "0.0.1",
+  "description": "Storybook integration for VSCode - preview React components with all Storybook features directly in your editor",
+  "version": "1.0.0",
+  "publisher": "sethcarney",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sethcarney/storybook-view.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sethcarney/storybook-view/issues"
+  },
+  "homepage": "https://github.com/sethcarney/storybook-view#readme",
+  "keywords": [
+    "storybook",
+    "react",
+    "component",
+    "preview",
+    "ui",
+    "development",
+    "testing"
+  ],
+  "license": "MIT",
+  "icon": "images/icon.png",
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
+    "Visualization",
     "Other"
   ],
   "activationEvents": [
@@ -81,9 +102,9 @@
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
     "package": "vsce package",
-    "install-extension": "code --install-extension storybook-view-0.0.1.vsix",
-    "setup": "node scripts/setup.js",
-    "dev": "node scripts/dev.js",
+    "install-extension": "code --install-extension storybook-view-1.0.0.vsix",
+    "setup": "cd test-app && npm install",
+    "dev": "npm run watch",
     "storybook": "cd test-app && npm run storybook"
   },
   "devDependencies": {

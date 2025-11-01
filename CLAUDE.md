@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Storybook View is a Visual Studio Code extension that provides Storybook integration for React components. The extension allows developers to preview their React components with all Storybook features directly within VSCode.
+**Storybook View** is a Visual Studio Code extension that provides Storybook integration for React components. The extension allows developers to preview their React components with all Storybook features directly within VSCode, without leaving the editor.
 
 The extension consists of:
 
@@ -13,51 +13,115 @@ The extension consists of:
 
 ## Architecture
 
+### Core Concept
+
+The extension acts as a **wrapper around your existing Storybook setup**. It doesn't implement its own preview system; instead, it:
+1. Starts your project's Storybook dev server
+2. Opens a webview panel with an iframe pointing to Storybook
+3. Navigates to the specific component's docs page
+4. Manages the server lifecycle (auto-start, auto-stop)
+
 ### Extension Flow
 
 1. User clicks the eye icon on a `.jsx` or `.tsx` component file
-2. Extension starts Storybook server (if not already running) on port 6006
-3. Opens a webview panel showing the component's Storybook documentation page
-4. Storybook's HMR automatically updates the preview when files change
-5. Inactivity timer (5 minutes) automatically stops Storybook to save resources
+2. Extension checks if Storybook server is running
+3. If not running, starts Storybook server on port 6006
+4. Opens a webview panel with loading spinner
+5. Webview polls Storybook server until it's ready (~10-20 seconds first time)
+6. Once ready, loads the component's Storybook docs page in iframe
+7. Storybook's HMR automatically updates the preview when files change
+8. Inactivity timer (5 minutes) automatically stops Storybook to save resources
 
 ### Key Components
 
-- **extension.ts** - Main entry point, registers commands and manages lifecycle
-- **storybookServer.ts** - Manages Storybook dev server process with auto-start/stop
-- **webviewPanel.ts** - Creates and manages the Storybook preview webview
+#### extension.ts
+- Main entry point for the extension
+- Registers commands:
+  - `storybookview.openPreview` - Open component preview
+  - `storybookview.startStorybook` - Manually start Storybook
+  - `storybookview.stopStorybook` - Manually stop Storybook
+  - `storybookview.openStorybook` - Open Storybook in external browser
+  - `storybookview.refreshPreview` - Refresh current preview
+- Manages lifecycle via `activate()` and `deactivate()`
+- Cleans up Storybook server on VSCode close
+
+#### storybookServer.ts
+- Singleton class managing Storybook dev server process
+- **Server Management**:
+  - Spawns Storybook as child process using `npx storybook dev`
+  - Uses dual detection: stdout parsing + HTTP polling (checks every 2 seconds)
+  - Properly kills process tree on Windows using `taskkill`
+- **Inactivity Timer**:
+  - 5-minute timer starts when server is active
+  - Resets on component preview or file edit
+  - Auto-stops server when timer expires
+- **Intentional Stop Tracking**:
+  - Tracks manual stops vs crashes using `isIntentionalStop` flag
+  - Prevents false error messages when user stops server
+- **Port Detection**:
+  - `checkIfPortInUse()` - Checks if port is occupied (TCP)
+  - `checkIfPortResponding()` - Checks if HTTP server is responding
+  - Supports external Storybook instances
+
+#### webviewPanel.ts
+- Manages the webview that displays Storybook
+- **Lifecycle**:
+  - Singleton pattern (`currentPanel`)
+  - Creates webview panel with `retainContextWhenHidden`
+  - Shows HTML with loading spinner immediately
+  - Starts Storybook in background (non-blocking)
+- **URL Construction**:
+  - Navigates to docs page: `http://localhost:6006/?path=/docs/components-{componentname}--docs`
+  - Docs page shows all story variations for the component
+- **Webview Polling**:
+  - JavaScript in webview polls `http://localhost:6006/` every second
+  - 30-second timeout with helpful error message
+  - Once connected, loads component-specific URL in iframe
+- **File Watching**:
+  - Watches component file for changes
+  - Resets inactivity timer (Storybook HMR handles actual updates)
+- **Cleanup**:
+  - Disposes file watchers and webview on panel close
 
 ## Development Commands
 
 ### Initial Setup
 
 ```bash
-npm run setup           # Install extension and test-app dependencies
+npm install              # Install extension dependencies
+cd test-app && npm install  # Install test-app dependencies
+npm run compile         # Compile TypeScript
 ```
 
 ### Extension Development
 
 ```bash
-npm run dev            # Start extension compilation + Storybook dev server
-npm run watch          # TypeScript compilation in watch mode
-npm run compile        # Compile extension TypeScript
+npm run dev            # TypeScript compilation in watch mode
+npm run compile        # Compile extension TypeScript once
 npm run lint          # Run ESLint on extension code
 ```
 
 ### Testing the Extension
 
-1. Run `npm run setup` to install all dependencies
-2. Press `F5` in VSCode to launch Extension Development Host
-3. Open component files from `test-app/src/components/`
-4. Click eye icon in editor toolbar to preview
-5. Storybook opens showing all story variations
+1. Press `F5` in VSCode to launch Extension Development Host
+2. Open component files from `test-app/src/components/`
+3. Click eye icon in editor toolbar to preview
+4. Storybook opens showing all story variations
+5. Check Debug Console for logs
 
 ### Test App & Storybook
 
 ```bash
 cd test-app
-npm run dev           # Start Vite dev server (for regular development)
-npm run storybook     # Start Storybook standalone (localhost:6006)
+npm run dev           # Start Vite dev server (port 5173)
+npm run storybook     # Start Storybook standalone (port 6006)
+```
+
+### Packaging
+
+```bash
+npm run package                 # Creates .vsix file
+npm run install-extension       # Installs the .vsix locally
 ```
 
 ## Storybook Integration
@@ -116,14 +180,6 @@ export const Variant: Story = {
 - **`.storybook/main.ts`** - Storybook configuration, loads stories from `src/components/**/*.stories.tsx`
 - **`.storybook/preview.ts`** - Global Storybook settings, imports Tailwind CSS
 
-## VSCode Commands
-
-The extension provides these commands (accessible via Command Palette):
-
-- **Storybook View: Start Storybook Server** - Manually start Storybook
-- **Storybook View: Stop Storybook Server** - Manually stop Storybook
-- **Storybook View: Open Storybook in Browser** - Open full Storybook in external browser
-
 ## Configuration Settings
 
 Available in VSCode settings:
@@ -131,28 +187,45 @@ Available in VSCode settings:
 - `storybookview.port`: Storybook server port (default: 6006)
 - `storybookview.autoRefresh`: Auto-refresh on file changes (default: true)
 
-## Development Notes
+## Server Lifecycle Management
 
-### Server Lifecycle Management
-
+### Auto-Start Behavior
 - Storybook auto-starts when user previews a component
-- Stays running for multiple component previews (no restart needed)
-- Auto-stops after 5 minutes of inactivity to save resources
-- Inactivity timer resets when user:
+- First start takes ~10-20 seconds (Storybook compilation)
+- Webview shows loading spinner during startup
+- Dual detection ensures reliable startup detection
+
+### Staying Running
+- Server stays running for multiple component previews
+- No restart needed when switching between components
+- Improves performance after initial startup
+
+### Auto-Stop Behavior
+- 5-minute inactivity timer to save resources
+- Timer resets when user:
   - Opens a new component preview
   - Edits a watched component file
+- Notification shown when auto-stopped
+- Can manually stop via Command Palette
 
-### Preview Navigation
+### Intentional Stop Handling
+- Uses `isIntentionalStop` flag to track manual stops
+- Prevents false error messages on intentional stop
+- Cleans up process properly on VSCode close
+
+## Preview Navigation
 
 - Extension navigates to Storybook's **docs page** for each component
 - Docs page shows all story variations in a single view
 - URL format: `http://localhost:6006/?path=/docs/components-{componentname}--docs`
+- Storybook's built-in HMR handles live updates automatically
 
-### Hot Module Replacement
+## Hot Module Replacement
 
 - Storybook's built-in HMR handles all live updates
 - Extension doesn't need to manage reload logic
 - File watcher only resets inactivity timer
+- Changes reflect instantly via Storybook's Vite integration
 
 ## Common Development Tasks
 
@@ -173,44 +246,34 @@ Available in VSCode settings:
 
 - Extension logs appear in VSCode Debug Console (when pressing F5)
 - Storybook server logs appear with `[Storybook]` prefix
-- Check `Output > Storybook View` panel for runtime information
-
-## Dependencies
-
-### Extension Dependencies
-
-- `vscode` - VSCode Extension API
-- `child_process` - For spawning Storybook server process
-
-### Test App Dependencies
-
-- **React 18** - UI library
-- **Vite 5** - Build tool and dev server
-- **Storybook 10** - Component development environment
-- **Tailwind CSS 3** - Styling
-- **TypeScript 5** - Type safety
+- Use `console.log` for debugging (appears in Debug Console)
+- Webview logs appear in webview developer tools (right-click > Inspect)
 
 ## Project Structure
 
 ```
 storybook-view/
 ├── src/                        # Extension source code
-│   ├── extension.ts           # Main entry point
-│   ├── storybookServer.ts     # Storybook server manager
-│   └── webviewPanel.ts        # Webview UI manager
+│   ├── extension.ts           # Main entry point, registers commands
+│   ├── storybookServer.ts     # Storybook server lifecycle manager
+│   └── webviewPanel.ts        # Webview UI manager (iframe wrapper)
 ├── test-app/                   # Test React application
 │   ├── .storybook/            # Storybook configuration
-│   │   ├── main.ts            # Stories config
-│   │   └── preview.ts         # Global settings
+│   │   ├── main.ts            # Stories glob patterns
+│   │   └── preview.ts         # Global settings, Tailwind import
 │   └── src/
-│       └── components/        # Components and their stories
+│       └── components/        # Test components and their stories
 │           ├── Button.tsx
 │           ├── Button.stories.tsx
 │           ├── Card.tsx
 │           ├── Card.stories.tsx
 │           └── ...
-├── package.json               # Extension dependencies
-└── CLAUDE.md                  # This file
+├── out/                        # Compiled JavaScript (gitignored)
+├── package.json               # Extension manifest and dependencies
+├── tsconfig.json             # TypeScript configuration
+├── CLAUDE.md                 # This file
+├── README.md                 # User documentation
+└── CHANGELOG.md              # Version history
 ```
 
 ## Troubleshooting
@@ -220,6 +283,7 @@ storybook-view/
 1. Check `test-app` dependencies are installed: `cd test-app && npm install`
 2. Verify Storybook works standalone: `cd test-app && npm run storybook`
 3. Check port 6006 isn't already in use
+4. Review Debug Console for error messages
 
 ### Component Not Found in Storybook
 
@@ -233,3 +297,68 @@ storybook-view/
 1. Close the preview panel
 2. Reopen by clicking eye icon on correct component file
 3. Panel title should update to show current component name
+
+### Server Won't Stop
+
+1. Check if it's an external Storybook instance (can't stop those)
+2. Try manual stop via Command Palette
+3. Check Task Manager/Activity Monitor for `node` processes on port 6006
+4. Restart VSCode as last resort
+
+## Technical Implementation Details
+
+### Dual Server Detection
+
+The extension uses two parallel detection methods for reliability:
+
+1. **Stdout Parsing**: Looks for keywords in console output
+   - "started", "Local:", "localhost:", "serving static files from"
+   - Flexible patterns to support Storybook 7+
+
+2. **HTTP Polling**: Makes actual HTTP requests every 2 seconds
+   - Checks `http://localhost:6006/` for 200 response
+   - More reliable than stdout parsing
+   - Fallback if console output doesn't match patterns
+
+Whichever method succeeds first resolves the startup promise.
+
+### Windows Process Tree Cleanup
+
+On Windows, uses `taskkill /pid /f /t` to kill entire process tree, not just parent process. This ensures all child processes (Vite, esbuild, etc.) are terminated.
+
+### Webview Security
+
+- Webview uses iframe to Storybook (localhost:6006)
+- No custom CSP needed (just iframe to local server)
+- No eval or unsafe-inline required
+- All security handled by Storybook itself
+
+## Publishing Checklist
+
+Before publishing to VSCode Marketplace:
+
+1. Update `publisher` in package.json with your publisher ID
+2. Update repository URLs (replace `yourusername`)
+3. Add an icon: 128x128 PNG as `icon.png` in root
+4. Create screenshot/demo GIF for README
+5. Test thoroughly in Extension Development Host
+6. Run `npm run package` to create .vsix
+7. Test .vsix installation: `code --install-extension storybook-view-1.0.0.vsix`
+8. Use `vsce publish` to publish (requires Personal Access Token)
+
+## Version 1.0.0 Features
+
+This is the initial stable release with:
+
+✅ Full Storybook integration
+✅ Auto-start/stop server management
+✅ Intelligent server detection
+✅ Webview with loading states
+✅ Inactivity timer
+✅ File watching and HMR
+✅ Windows/Mac/Linux support
+✅ Proper error handling
+✅ Clean deactivation
+✅ Test app with example components
+
+Future enhancements tracked in CHANGELOG.md.

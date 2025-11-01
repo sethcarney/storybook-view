@@ -1,13 +1,48 @@
+# VSCode Extension ignore file
+# Files and directories to exclude from the extension package
+
+# VSCode directories
 .vscode/**
 .vscode-test/**
-src/**
+
+# Git
+.git/**
 .gitignore
-.yarnrc
-vsc-extension-quickstart.md
+
+# Claude
+.claude/**
+CLAUDE.md
+
+# Source files (only include compiled JS)
+src/**
 **/tsconfig.json
 **/.eslintrc.json
 **/*.map
 **/*.ts
+
+# Test app (not needed in extension package)
 test-app/**
+
+# Include images directory (for icon, screenshots, etc)
+!images/**
+
+# Dependencies (will be included if needed via bundling)
 node_modules/**
+
+# Build artifacts
 *.vsix
+out/test/**
+
+# Config files
+.yarnrc
+.prettierrc
+vsc-extension-quickstart.md
+
+# Documentation (README and CHANGELOG are included by default)
+# Other markdown files excluded
+DEVELOPMENT.md
+MIGRATION_STEPS.md
+
+# npm
+.npmrc
+package-lock.json
