@@ -63,6 +63,11 @@ export class StorybookPreviewPanel {
       }
     );
 
+    // Set the panel icon to match the extension icon
+    panel.iconPath = vscode.Uri.file(
+      path.join(extensionPath, "images", "icon.png")
+    );
+
     StorybookPreviewPanel.currentPanel = new StorybookPreviewPanel(
       panel,
       extensionPath
