@@ -1,25 +1,20 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { ComponentParser } from "./componentParser";
-import { PreviewServer } from "./previewServer";
+import { StorybookServer } from "./storybookServer";
 
 export class ReactPreviewPanel {
   private static currentPanel: ReactPreviewPanel | undefined;
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionPath: string;
   private disposables: vscode.Disposable[] = [];
-  private parser: ComponentParser;
   private currentComponentUri: vscode.Uri | undefined;
   private fileWatcher: vscode.FileSystemWatcher | undefined;
-  private previewServer: PreviewServer;
-  private isUpdating: boolean = false;
-  private updateTimeout: NodeJS.Timeout | undefined;
+  private storybookServer: StorybookServer;
 
   private constructor(panel: vscode.WebviewPanel, extensionPath: string) {
     this.panel = panel;
     this.extensionPath = extensionPath;
-    this.parser = new ComponentParser();
-    this.previewServer = PreviewServer.getInstance(extensionPath);
+    this.storybookServer = StorybookServer.getInstance(extensionPath);
 
     // Handle messages from the webview
     this.panel.webview.onDidReceiveMessage(
@@ -27,6 +22,8 @@ export class ReactPreviewPanel {
         switch (message.command) {
           case "ready":
             console.log("Preview webview is ready");
+            // Reset inactivity timer when user interacts
+            this.storybookServer.resetInactivityTimer();
             break;
           case "error":
             vscode.window.showErrorMessage(`Preview error: ${message.text}`);
@@ -57,7 +54,7 @@ export class ReactPreviewPanel {
     // Otherwise, create a new panel
     const panel = vscode.window.createWebviewPanel(
       "reactPreview",
-      "React Preview",
+      "Storybook Preview",
       column,
       {
         enableScripts: true,
@@ -76,103 +73,81 @@ export class ReactPreviewPanel {
   public async setComponent(componentUri: vscode.Uri) {
     this.currentComponentUri = componentUri;
 
-    // Update panel title
+    // Update panel title with component name
     const fileName = path.basename(componentUri.fsPath);
-    this.panel.title = `Preview: ${fileName}`;
+    const componentName = this.getComponentName(fileName);
+    this.panel.title = `Storybook: ${componentName}`;
 
     // Set up file watcher - watch the specific component file
     if (this.fileWatcher) {
       this.fileWatcher.dispose();
     }
 
-    // Watch ONLY the original component file, not the preview-runtime directory
+    // Watch the original component file - Storybook will HMR automatically
     this.fileWatcher = vscode.workspace.createFileSystemWatcher(
       componentUri.fsPath
     );
 
     this.fileWatcher.onDidChange(() => {
-      if (
-        vscode.workspace.getConfiguration("reactview").get("autoRefresh", true)
-      ) {
-        // Don't reload on every change - Vite HMR handles it
-        // Just update the UserComponent.tsx file
-        this.debouncedUpdatePreview();
-      }
+      // Storybook's HMR will handle updates automatically
+      // Just reset the inactivity timer
+      this.storybookServer.resetInactivityTimer();
     });
 
-    // Start preview server if not running
+    // Start Storybook server if not running
     try {
-      if (!this.previewServer.isRunning()) {
+      if (!this.storybookServer.isRunning()) {
         await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: "Starting preview server...",
+            title: "Starting Storybook...",
             cancellable: false
           },
           async () => {
-            await this.previewServer.start();
+            await this.storybookServer.start();
           }
         );
+      } else {
+        // Reset inactivity timer if already running
+        this.storybookServer.resetInactivityTimer();
       }
 
-      // Set initial HTML content
-      const componentInfo = this.parser.parseComponent(componentUri.fsPath);
-      await this.previewServer.loadComponent(componentUri.fsPath);
-      const port = this.previewServer.getPort();
-      this.panel.webview.html = this.getWebviewContent(port, componentInfo);
+      // Get component name from filename
+      const componentName = this.getComponentName(fileName);
+
+      // Try to find the story URL, otherwise just show Storybook home
+      const storybookUrl = this.getStorybookUrl(componentName);
+
+      this.panel.webview.html = this.getWebviewContent(storybookUrl, componentName);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       vscode.window.showErrorMessage(
-        `Failed to start preview server: ${message}`
+        `Failed to start Storybook: ${message}`
       );
     }
   }
 
-  private debouncedUpdatePreview() {
-    // Clear existing timeout
-    if (this.updateTimeout) {
-      clearTimeout(this.updateTimeout);
-    }
-
-    // Debounce for 1 second to avoid rapid updates
-    this.updateTimeout = setTimeout(() => {
-      this.updatePreview();
-    }, 1000);
+  private getComponentName(fileName: string): string {
+    // Remove file extension
+    return fileName.replace(/\.(tsx|jsx|ts|js)$/, '');
   }
 
-  private async updatePreview() {
-    if (!this.currentComponentUri || this.isUpdating) {
-      return;
-    }
-
-    this.isUpdating = true;
-
-    try {
-      // Parse component to get prop information
-      const componentInfo = this.parser.parseComponent(
-        this.currentComponentUri.fsPath
-      );
-
-      // Copy component to preview-runtime (Vite HMR will handle the update automatically)
-      await this.previewServer.loadComponent(this.currentComponentUri.fsPath);
-
-      // Don't reload the iframe - Vite HMR will handle updates automatically
-      // We only set the HTML on initial load
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown error";
-      vscode.window.showErrorMessage(`Failed to update preview: ${message}`);
-    } finally {
-      this.isUpdating = false;
-    }
+  private getStorybookUrl(componentName: string): string {
+    const baseUrl = this.storybookServer.getUrl();
+    // Navigate to the component's docs page which shows all stories
+    // Storybook URL format: /?path=/docs/components-componentname--docs
+    const docsPath = `components-${componentName.toLowerCase()}--docs`;
+    return `${baseUrl}/?path=/docs/${docsPath}`;
   }
 
-  private getWebviewContent(port: number, componentInfo: any): string {
+  private getWebviewContent(storybookUrl: string, componentName: string): string {
+    const port = this.storybookServer.getPort();
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>React Preview</title>
+    <title>Storybook Preview</title>
     <style>
         body, html {
             margin: 0;
@@ -227,7 +202,7 @@ export class ReactPreviewPanel {
 <body>
     <div id="loading" class="loading-container">
         <div class="spinner"></div>
-        <div class="loading-text">Starting preview server...</div>
+        <div class="loading-text">Starting Storybook...</div>
     </div>
     <iframe
         id="preview-frame"
@@ -241,35 +216,26 @@ export class ReactPreviewPanel {
         const loadingText = document.querySelector('.loading-text');
 
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 60; // Storybook takes longer to start
         let checkInterval;
 
-        // Function to check if Vite server is ready
+        // Function to check if Storybook server is ready
         function checkServer() {
             attempts++;
-            loadingText.textContent = \`Connecting to preview server... (\${attempts}/\${maxAttempts})\`;
+            loadingText.textContent = \`Connecting to Storybook... (\${attempts}/\${maxAttempts})\`;
 
             fetch('http://localhost:${port}/')
                 .then(response => {
                     if (response.ok) {
                         clearInterval(checkInterval);
-                        loadingText.textContent = 'Loading component...';
+                        loadingText.textContent = 'Loading ${componentName} stories...';
 
-                        // Server is ready, load the iframe
-                        iframe.src = 'http://localhost:${port}';
+                        // Server is ready, load the iframe with the specific component
+                        iframe.src = '${storybookUrl}';
                         iframe.style.display = 'block';
 
                         iframe.onload = function() {
                             loading.style.display = 'none';
-
-                            // Send component info to iframe
-                            setTimeout(() => {
-                                iframe.contentWindow.postMessage({
-                                    type: 'updateComponent',
-                                    componentInfo: ${JSON.stringify(componentInfo)},
-                                    props: {}
-                                }, '*');
-                            }, 100);
                         };
                     }
                 })
@@ -280,11 +246,11 @@ export class ReactPreviewPanel {
                         loading.innerHTML = \`
                             <div class="spinner" style="display: none;"></div>
                             <div class="error">
-                                <strong>Failed to connect to preview server</strong>
+                                <strong>Failed to connect to Storybook</strong>
                                 <p style="margin: 8px 0 0 0; font-size: 12px;">
-                                    Make sure preview-runtime dependencies are installed:<br>
+                                    Make sure test-app dependencies are installed:<br>
                                     <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 3px;">
-                                        cd preview-runtime && npm install
+                                        cd test-app && npm install
                                     </code>
                                 </p>
                             </div>
@@ -304,10 +270,6 @@ export class ReactPreviewPanel {
   public dispose() {
     ReactPreviewPanel.currentPanel = undefined;
 
-    if (this.updateTimeout) {
-      clearTimeout(this.updateTimeout);
-    }
-
     if (this.fileWatcher) {
       this.fileWatcher.dispose();
     }
@@ -323,8 +285,11 @@ export class ReactPreviewPanel {
   }
 
   public static refresh() {
-    if (ReactPreviewPanel.currentPanel) {
-      ReactPreviewPanel.currentPanel.updatePreview();
+    if (ReactPreviewPanel.currentPanel && ReactPreviewPanel.currentPanel.currentComponentUri) {
+      // Reload the component
+      ReactPreviewPanel.currentPanel.setComponent(
+        ReactPreviewPanel.currentPanel.currentComponentUri
+      );
     }
   }
 }

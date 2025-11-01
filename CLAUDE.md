@@ -4,96 +4,232 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ReactView is a Visual Studio Code extension that provides live preview capabilities for React components within the IDE. The extension consists of:
+ReactView is a Visual Studio Code extension that provides Storybook integration for React components. The extension allows developers to preview their React components with all Storybook features directly within VSCode.
 
-1. **VSCode Extension** (`src/`) - TypeScript extension code
-2. **Test React App** (`test-app/`) - Vite + React + Tailwind test application
-3. **Development Scripts** (`scripts/`) - Setup and development automation
+The extension consists of:
+
+1. **VSCode Extension** (`src/`) - TypeScript extension code that manages Storybook server lifecycle
+2. **Test React App** (`test-app/`) - Vite + React + Tailwind + Storybook test application
+
+## Architecture
+
+### Extension Flow
+
+1. User clicks the eye icon on a `.jsx` or `.tsx` component file
+2. Extension starts Storybook server (if not already running) on port 6006
+3. Opens a webview panel showing the component's Storybook documentation page
+4. Storybook's HMR automatically updates the preview when files change
+5. Inactivity timer (5 minutes) automatically stops Storybook to save resources
+
+### Key Components
+
+- **extension.ts** - Main entry point, registers commands and manages lifecycle
+- **storybookServer.ts** - Manages Storybook dev server process with auto-start/stop
+- **webviewPanel.ts** - Creates and manages the Storybook preview webview
 
 ## Development Commands
 
 ### Initial Setup
 
 ```bash
-npm run setup           # Install all dependencies and configure VSCode
+npm run setup           # Install extension and test-app dependencies
 ```
 
-### Development
+### Extension Development
 
 ```bash
-npm run dev            # Start extension compilation + test app dev server
+npm run dev            # Start extension compilation + Storybook dev server
 npm run watch          # TypeScript compilation in watch mode
-npm run test-app       # Start test app only (localhost:3000)
-```
-
-### Building and Testing
-
-```bash
 npm run compile        # Compile extension TypeScript
 npm run lint          # Run ESLint on extension code
-npm run package       # Create .vsix package for distribution
-npm run install-extension  # Install packaged extension locally
 ```
 
 ### Testing the Extension
 
-1. Run `npm run dev` to start development environment
+1. Run `npm run setup` to install all dependencies
 2. Press `F5` in VSCode to launch Extension Development Host
 3. Open component files from `test-app/src/components/`
 4. Click eye icon in editor toolbar to preview
-5. Preview opens at http://localhost:3001
+5. Storybook opens showing all story variations
 
-## Code Architecture
+### Test App & Storybook
 
-### Extension Structure (`src/`)
+```bash
+cd test-app
+npm run dev           # Start Vite dev server (for regular development)
+npm run storybook     # Start Storybook standalone (localhost:6006)
+```
 
-- `extension.ts` - Main extension entry point, command registration
-- `previewServer.ts` - Express server with WebSocket for live preview
-- `componentParser.ts` - Analyzes React components to extract prop information
+## Storybook Integration
 
-### Preview Flow
+### Story File Structure
 
-1. User clicks preview button on `.jsx/.tsx` file
-2. Extension starts Express server (port 3001)
-3. Component parser extracts prop types from TypeScript interfaces/PropTypes
-4. Browser opens with interactive preview UI
-5. WebSocket enables live updates on file changes
+Stories are located in `test-app/src/components/` alongside their components:
 
-### Test App Structure (`test-app/`)
+```
+test-app/src/components/
+├── Button.tsx
+├── Button.stories.tsx
+├── Card.tsx
+├── Card.stories.tsx
+└── ...
+```
 
-Standard Vite React app with:
+### Creating New Stories
 
-- Three example components with various prop patterns
-- Tailwind CSS for styling
-- TypeScript interfaces demonstrating parser capabilities
+Follow this pattern for new component stories:
 
-## Component Parser Capabilities
+```typescript
+import type { Meta, StoryObj } from '@storybook/react';
+import { YourComponent } from './YourComponent';
 
-Extracts prop information from:
+const meta = {
+  title: 'Components/YourComponent',
+  component: YourComponent,
+  parameters: {
+    layout: 'centered',
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    // Define prop controls here
+  },
+} satisfies Meta<typeof YourComponent>;
 
-- TypeScript interfaces (preferred method)
-- PropTypes definitions
-- Function parameter destructuring patterns
+export default meta;
+type Story = StoryObj<typeof meta>;
 
-Generates appropriate UI controls:
+export const Default: Story = {
+  args: {
+    // Default props
+  },
+};
 
-- Text inputs for strings
-- Checkboxes for booleans
-- Number inputs for numbers
-- Select dropdowns for union types
-- Preset buttons for common prop combinations
+export const Variant: Story = {
+  args: {
+    // Variant props
+  },
+};
+```
+
+### Storybook Configuration
+
+- **`.storybook/main.ts`** - Storybook configuration, loads stories from `src/components/**/*.stories.tsx`
+- **`.storybook/preview.ts`** - Global Storybook settings, imports Tailwind CSS
+
+## VSCode Commands
+
+The extension provides these commands (accessible via Command Palette):
+
+- **ReactView: Start Storybook Server** - Manually start Storybook
+- **ReactView: Stop Storybook Server** - Manually stop Storybook
+- **ReactView: Open Storybook in Browser** - Open full Storybook in external browser
+
+## Configuration Settings
+
+Available in VSCode settings:
+
+- `reactview.port`: Storybook server port (default: 6006)
+- `reactview.autoRefresh`: Auto-refresh on file changes (default: true)
 
 ## Development Notes
 
-- Extension activates on JavaScript/TypeScript file types
-- Preview server runs on configurable port (default 3001)
-- Auto-refresh enabled by default when files change
-- VSCode launch configuration created by setup script
-- Test components demonstrate various prop patterns for parser testing
+### Server Lifecycle Management
+
+- Storybook auto-starts when user previews a component
+- Stays running for multiple component previews (no restart needed)
+- Auto-stops after 5 minutes of inactivity to save resources
+- Inactivity timer resets when user:
+  - Opens a new component preview
+  - Edits a watched component file
+
+### Preview Navigation
+
+- Extension navigates to Storybook's **docs page** for each component
+- Docs page shows all story variations in a single view
+- URL format: `http://localhost:6006/?path=/docs/components-{componentname}--docs`
+
+### Hot Module Replacement
+
+- Storybook's built-in HMR handles all live updates
+- Extension doesn't need to manage reload logic
+- File watcher only resets inactivity timer
 
 ## Common Development Tasks
 
-- **Adding new test components**: Create in `test-app/src/components/`
-- **Extending parser**: Modify `componentParser.ts`
-- **UI improvements**: Update HTML template in `previewServer.ts`
-- **New extension commands**: Register in `package.json` and `extension.ts`
+### Adding a New Test Component
+
+1. Create component in `test-app/src/components/YourComponent.tsx`
+2. Create story file `test-app/src/components/YourComponent.stories.tsx`
+3. Export multiple story variations
+4. Click eye icon on component file to preview
+
+### Extending the Extension
+
+- **Add new commands**: Register in `package.json` and `extension.ts`
+- **Modify server behavior**: Edit `storybookServer.ts`
+- **Change preview UI**: Update webview HTML in `webviewPanel.ts`
+
+### Debugging
+
+- Extension logs appear in VSCode Debug Console (when pressing F5)
+- Storybook server logs appear with `[Storybook]` prefix
+- Check `Output > ReactView` panel for runtime information
+
+## Dependencies
+
+### Extension Dependencies
+
+- `vscode` - VSCode Extension API
+- `child_process` - For spawning Storybook server process
+
+### Test App Dependencies
+
+- **React 18** - UI library
+- **Vite 5** - Build tool and dev server
+- **Storybook 10** - Component development environment
+- **Tailwind CSS 3** - Styling
+- **TypeScript 5** - Type safety
+
+## Project Structure
+
+```
+ReactView/
+├── src/                        # Extension source code
+│   ├── extension.ts           # Main entry point
+│   ├── storybookServer.ts     # Storybook server manager
+│   └── webviewPanel.ts        # Webview UI manager
+├── test-app/                   # Test React application
+│   ├── .storybook/            # Storybook configuration
+│   │   ├── main.ts            # Stories config
+│   │   └── preview.ts         # Global settings
+│   └── src/
+│       └── components/        # Components and their stories
+│           ├── Button.tsx
+│           ├── Button.stories.tsx
+│           ├── Card.tsx
+│           ├── Card.stories.tsx
+│           └── ...
+├── package.json               # Extension dependencies
+└── CLAUDE.md                  # This file
+```
+
+## Troubleshooting
+
+### Storybook Won't Start
+
+1. Check `test-app` dependencies are installed: `cd test-app && npm install`
+2. Verify Storybook works standalone: `cd test-app && npm run storybook`
+3. Check port 6006 isn't already in use
+
+### Component Not Found in Storybook
+
+1. Verify story file exists alongside component
+2. Check story file matches pattern: `*.stories.tsx`
+3. Ensure story has proper `title` in meta (e.g., `'Components/YourComponent'`)
+4. Restart Storybook server via Command Palette
+
+### Preview Shows Wrong Component
+
+1. Close the preview panel
+2. Reopen by clicking eye icon on correct component file
+3. Panel title should update to show current component name

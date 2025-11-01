@@ -1,6 +1,9 @@
 {
   "permissions": {
-    "allow": ["Bash(mkdir:*)"],
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npx storybook@latest init:*)"
+    ],
     "deny": [],
     "ask": []
   }

@@ -1,2 +1,4 @@
 node_modules
 out
+*storybook.log
+storybook-static
