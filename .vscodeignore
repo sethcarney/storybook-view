@@ -23,8 +23,8 @@ src/**
 # Test app (not needed in extension package)
 test-app/**
 
-# Include images directory (for icon, screenshots, etc)
-!images/**
+# Images (served via GitHub)
+images/**
 
 # Dependencies (will be included if needed via bundling)
 node_modules/**
