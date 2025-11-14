@@ -255,9 +255,10 @@ export class StorybookPreviewPanel {
                                 </p>
                                 <p style="margin: 8px 0; font-size: 12px; line-height: 1.5; opacity: 0.9;">
                                     Please close this window and try again. If the problem persists:<br>
-                                    1. Make sure dependencies are installed: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">cd test-app && npm install</code><br>
-                                    2. Check the Debug Console for error messages<br>
-                                    3. Try manually running: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">cd test-app && npm run storybook</code>
+                                    1. Make sure dependencies are installed: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm install</code><br>
+                                    2. Ensure Storybook is configured: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npx storybook@latest init</code><br>
+                                    3. Check the Debug Console for error messages<br>
+                                    4. Try manually running: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm run storybook</code>
                                 </p>
                             </div>
                         \`;

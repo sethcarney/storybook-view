@@ -7,13 +7,55 @@ export class StorybookServer {
   private static instance: StorybookServer | undefined;
   private storybookProcess: ChildProcess | undefined;
   private port: number = 6006;
-  private testAppPath: string;
+  private workspacePath: string;
   private inactivityTimer: NodeJS.Timeout | undefined;
   private readonly INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
   private isIntentionalStop: boolean = false;
 
   private constructor(extensionPath: string) {
-    this.testAppPath = path.join(extensionPath, "test-app");
+    // Find the workspace path with Storybook
+    this.workspacePath = this.findStorybookWorkspace();
+  }
+
+  /**
+   * Find the workspace directory that contains Storybook
+   * Searches for package.json with Storybook dependencies
+   */
+  private findStorybookWorkspace(): string {
+    const vscode = require('vscode');
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+
+    if (!workspaceFolders || workspaceFolders.length === 0) {
+      throw new Error("No workspace folder open. Please open a folder with a Storybook project.");
+    }
+
+    // Check each workspace folder for Storybook
+    for (const folder of workspaceFolders) {
+      const packageJsonPath = path.join(folder.uri.fsPath, 'package.json');
+
+      if (fs.existsSync(packageJsonPath)) {
+        try {
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+          const deps = {
+            ...packageJson.dependencies,
+            ...packageJson.devDependencies
+          };
+
+          // Check if Storybook is installed
+          if (deps['storybook'] || deps['@storybook/react'] || deps['@storybook/react-vite'] ||
+              Object.keys(deps).some(key => key.startsWith('@storybook/'))) {
+            console.log(`[Storybook] Found Storybook in: ${folder.uri.fsPath}`);
+            return folder.uri.fsPath;
+          }
+        } catch (err) {
+          console.error(`[Storybook] Error reading package.json in ${folder.uri.fsPath}:`, err);
+        }
+      }
+    }
+
+    // Fallback to first workspace folder
+    console.log(`[Storybook] No Storybook found in workspace, using first folder: ${workspaceFolders[0].uri.fsPath}`);
+    return workspaceFolders[0].uri.fsPath;
   }
 
   public static getInstance(extensionPath: string): StorybookServer {
@@ -39,12 +81,23 @@ export class StorybookServer {
     }
 
     return new Promise((resolve, reject) => {
-      // Check if test-app dependencies are installed
-      const nodeModulesPath = path.join(this.testAppPath, "node_modules");
+      // Check if workspace dependencies are installed
+      const nodeModulesPath = path.join(this.workspacePath, "node_modules");
       if (!fs.existsSync(nodeModulesPath)) {
         reject(
           new Error(
-            "Test app dependencies not installed. Run: cd test-app && npm install"
+            "Dependencies not installed. Please run: npm install"
+          )
+        );
+        return;
+      }
+
+      // Check if Storybook is configured
+      const storybookConfigPath = path.join(this.workspacePath, ".storybook");
+      if (!fs.existsSync(storybookConfigPath)) {
+        reject(
+          new Error(
+            "Storybook not configured. Please run: npx storybook@latest init"
           )
         );
         return;
@@ -68,7 +121,7 @@ export class StorybookServer {
       ];
 
       this.storybookProcess = spawn(npxCmd, storybookArgs, {
-        cwd: this.testAppPath,
+        cwd: this.workspacePath,
         shell: true,
         stdio: ["ignore", "pipe", "pipe"]
       });
