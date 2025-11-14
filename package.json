@@ -2,7 +2,7 @@
   "name": "storybook-view",
   "displayName": "Storybook View",
   "description": "Storybook integration for VSCode - preview React components with all Storybook features directly in your editor",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "publisher": "sethssoftware",
   "repository": {
     "type": "git",
