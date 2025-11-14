@@ -15,7 +15,7 @@
 - **🎯 All Variations** - View all story variants in one unified interface
 - **♿ Accessibility Testing** - Built-in a11y testing with Storybook addons
 
-![Storybook View Demo](images/demo-recording.gif)
+![Storybook View Demo](https://raw.githubusercontent.com/sethcarney/storybook-view/main/images/demo-recording.gif)
 
 ## Quick Start
 
@@ -204,7 +204,7 @@ export const Button: React.FC<ButtonProps> = ({
 
 ### Component Preview
 
-![Screenshot](images/screenshot.png)
+![Screenshot](https://raw.githubusercontent.com/sethcarney/storybook-view/main/images/screenshot.png)
 
 ## Why Storybook View?
 

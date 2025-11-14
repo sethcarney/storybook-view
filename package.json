@@ -100,13 +100,14 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "clean": "node -e \"require('fs').rmSync('out', {recursive: true, force: true})\"",
+    "vscode:prepublish": "npm run clean && npm run compile",
+    "compile": "npm run clean && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package",
+    "package": "npm run clean && npm run compile && vsce package",
     "install-extension": "code --install-extension storybook-view-1.0.0.vsix",
     "setup": "cd test-app && npm install",
     "dev": "npm run watch",
