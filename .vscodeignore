@@ -23,8 +23,9 @@ src/**
 # Test app (not needed in extension package)
 test-app/**
 
-# Images (served via GitHub)
+# Images (exclude all except icon.png)
 images/**
+!icon/icon.png
 
 # Dependencies (will be included if needed via bundling)
 node_modules/**
