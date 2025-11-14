@@ -13,15 +13,15 @@ export class StorybookServer {
   private isIntentionalStop: boolean = false;
 
   private constructor(extensionPath: string) {
-    // Find the workspace path with Storybook
-    this.workspacePath = this.findStorybookWorkspace();
+    // Get the workspace path for Storybook
+    this.workspacePath = this.getStorybookWorkspacePath();
   }
 
   /**
-   * Find the workspace directory that contains Storybook
-   * Searches for package.json with Storybook dependencies
+   * Get the workspace directory for Storybook based on configuration
+   * Uses storybookview.storybookPath setting or defaults to workspace root
    */
-  private findStorybookWorkspace(): string {
+  private getStorybookWorkspacePath(): string {
     const vscode = require('vscode');
     const workspaceFolders = vscode.workspace.workspaceFolders;
 
@@ -29,33 +29,23 @@ export class StorybookServer {
       throw new Error("No workspace folder open. Please open a folder with a Storybook project.");
     }
 
-    // Check each workspace folder for Storybook
-    for (const folder of workspaceFolders) {
-      const packageJsonPath = path.join(folder.uri.fsPath, 'package.json');
+    // Get the workspace root
+    const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-      if (fs.existsSync(packageJsonPath)) {
-        try {
-          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-          const deps = {
-            ...packageJson.dependencies,
-            ...packageJson.devDependencies
-          };
+    // Get the configured Storybook path from settings
+    const config = vscode.workspace.getConfiguration('storybookview');
+    const storybookPath = config.get('storybookPath', '') as string;
 
-          // Check if Storybook is installed
-          if (deps['storybook'] || deps['@storybook/react'] || deps['@storybook/react-vite'] ||
-              Object.keys(deps).some(key => key.startsWith('@storybook/'))) {
-            console.log(`[Storybook] Found Storybook in: ${folder.uri.fsPath}`);
-            return folder.uri.fsPath;
-          }
-        } catch (err) {
-          console.error(`[Storybook] Error reading package.json in ${folder.uri.fsPath}:`, err);
-        }
-      }
+    // If a custom path is configured, join it with the workspace root
+    if (storybookPath && storybookPath.trim() !== '') {
+      const fullPath = path.join(workspaceRoot, storybookPath);
+      console.log(`[Storybook] Using configured path: ${fullPath}`);
+      return fullPath;
     }
 
-    // Fallback to first workspace folder
-    console.log(`[Storybook] No Storybook found in workspace, using first folder: ${workspaceFolders[0].uri.fsPath}`);
-    return workspaceFolders[0].uri.fsPath;
+    // Default to workspace root
+    console.log(`[Storybook] Using workspace root: ${workspaceRoot}`);
+    return workspaceRoot;
   }
 
   public static getInstance(extensionPath: string): StorybookServer {

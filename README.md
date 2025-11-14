@@ -90,6 +90,7 @@ Configure in VS Code settings (`File > Preferences > Settings`):
 
 ```json
 {
+  "storybookview.storybookPath": "",
   "storybookview.port": 6006,
   "storybookview.autoRefresh": true
 }
@@ -97,10 +98,19 @@ Configure in VS Code settings (`File > Preferences > Settings`):
 
 ### Settings
 
-| Setting                     | Type      | Default | Description                          |
-| --------------------------- | --------- | ------- | ------------------------------------ |
-| `storybookview.port`        | `number`  | `6006`  | Port for the Storybook server        |
-| `storybookview.autoRefresh` | `boolean` | `true`  | Auto-refresh preview on file changes |
+| Setting                       | Type      | Default | Description                                                                                       |
+| ----------------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------- |
+| `storybookview.storybookPath` | `string`  | `""`    | Path to Storybook directory (relative to workspace root). Leave empty to use workspace root.     |
+| `storybookview.port`          | `number`  | `6006`  | Port for the Storybook server                                                                     |
+| `storybookview.autoRefresh`   | `boolean` | `true`  | Auto-refresh preview on file changes                                                              |
+
+**Example:** If your Storybook is in a subdirectory, set `storybookview.storybookPath` to that path:
+
+```json
+{
+  "storybookview.storybookPath": "frontend"
+}
+```
 
 ## How It Works
 

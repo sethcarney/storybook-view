@@ -2,7 +2,7 @@
   "name": "storybook-view",
   "displayName": "Storybook View",
   "description": "Storybook integration for VSCode - preview React components with all Storybook features directly in your editor",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "sethssoftware",
   "repository": {
     "type": "git",
@@ -81,6 +81,11 @@
     "configuration": {
       "title": "Storybook View",
       "properties": {
+        "storybookview.storybookPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the directory containing your Storybook configuration (relative to workspace root). Leave empty to use workspace root."
+        },
         "storybookview.port": {
           "type": "number",
           "default": 6006,
