@@ -1,6 +1,6 @@
 # Storybook View for VSCode
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/storybook-view)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/sethcarney/storybook-view)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 > **Storybook integration for Visual Studio Code** - Preview your React components with all Storybook features directly in your editor.
@@ -224,7 +224,7 @@ export const Button: React.FC<ButtonProps> = ({
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/storybook-view.git
+git clone https://github.com/sethcarney/storybook-view.git
 cd storybook-view
 npm install
 npm run compile
@@ -249,7 +249,7 @@ Contributions are welcome! Please open an issue or submit a pull request.
 
 ## License
 
-[MIT](LICENSE) © Your Name
+[MIT](LICENSE) © Seth Carney
 
 ## Credits
 
@@ -262,4 +262,4 @@ Built with:
 
 ---
 
-**Enjoying Storybook View?** Star the repo on [GitHub](https://github.com/yourusername/storybook-view) and rate it on the [VSCode Marketplace](https://marketplace.visualstudio.com/)!
+**Enjoying Storybook View?** Star the repo on [GitHub](https://github.com/sethcarney/storybook-view) and rate it on the [VSCode Marketplace](https://marketplace.visualstudio.com/)!
