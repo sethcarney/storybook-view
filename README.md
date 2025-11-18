@@ -10,7 +10,7 @@ Preview React components with Storybook directly in VSCode.
 ## Features
 
 - One-click preview from editor toolbar
-- Auto-start/stop Storybook server
+- Auto-start/stop Storybook server with configurable idle timeout
 - Hot Module Replacement (HMR)
 - Access all Storybook features and addons
 
@@ -57,17 +57,38 @@ export const Primary: Story = {
 
 ```json
 {
-  "storybookview.storybookPath": "",  // Path to Storybook (leave empty for workspace root)
-  "storybookview.port": 6006,         // Storybook server port
-  "storybookview.autoRefresh": true   // Auto-refresh on file changes
+  "storybookview.storybookPath": "",     // Path to Storybook (leave empty for workspace root)
+  "storybookview.port": 6006,            // Storybook server port
+  "storybookview.autoRefresh": true,     // Auto-refresh on file changes
+  "storybookview.inactivityTimeout": 5   // Auto-stop server after N minutes of inactivity (1-60)
 }
 ```
+
+### Idle Timeout Behavior
+
+The Storybook server automatically stops after a period of inactivity to save system resources. The default is 5 minutes, but you can configure this from 1-60 minutes.
+
+**The inactivity timer resets when you:**
+- Open a new component preview
+- Edit a component file being previewed
+- Interact with the preview panel
+
+**Manual control:**
+- Stop server manually via Command Palette: "Storybook View: Stop Storybook Server"
+- Restart server: "Storybook View: Start Storybook Server"
+- Server auto-starts when you open a preview
 
 ## Troubleshooting
 
 **Storybook won't start:**
 - Verify Storybook works: `npm run storybook`
 - Check port 6006 is available
+- If using a custom Storybook location, verify `storybookview.storybookPath` setting is correct
+
+**"Configured Storybook path does not exist" error:**
+- Update the `storybookview.storybookPath` setting to point to the correct directory
+- The path should be relative to your workspace root
+- Leave empty if Storybook is in the workspace root
 
 **Component not showing:**
 - Ensure `.stories.tsx` file exists

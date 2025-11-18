@@ -95,7 +95,7 @@ export function activate(context: vscode.ExtensionContext) {
           "Storybook is running externally. Please stop it manually."
         );
       } else {
-        storybookServer.stop();
+        await storybookServer.stop();
         vscode.window.showInformationMessage(
           "Storybook server has been terminated"
         );
@@ -141,7 +141,8 @@ export async function deactivate() {
 
     if (isRunning && canStop) {
       console.log("[Extension] Stopping Storybook server...");
-      storybookServer.stop();
+      await storybookServer.stop();
+      console.log("[Extension] Storybook server stopped successfully");
     }
   } catch (error) {
     console.error("[Extension] Error during deactivation:", error);

@@ -95,6 +95,13 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically refresh preview on file changes"
+        },
+        "storybookview.inactivityTimeout": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 60,
+          "description": "Automatically stop Storybook server after this many minutes of inactivity (1-60 minutes)"
         }
       }
     }

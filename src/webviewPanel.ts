@@ -206,6 +206,9 @@ export class StorybookPreviewPanel {
     <div id="loading" class="loading-container">
         <div class="spinner"></div>
         <div class="loading-text">Starting Storybook...</div>
+        <div class="loading-hint" style="margin-top: 12px; font-size: 12px; opacity: 0.7; max-width: 400px; text-align: center; line-height: 1.5;">
+            Initial startup may take 10-20 seconds while Storybook compiles your components.
+        </div>
     </div>
     <iframe
         id="preview-frame"
@@ -217,9 +220,10 @@ export class StorybookPreviewPanel {
         const iframe = document.getElementById('preview-frame');
         const loading = document.getElementById('loading');
         const loadingText = document.querySelector('.loading-text');
+        const loadingHint = document.querySelector('.loading-hint');
 
         let attempts = 0;
-        const maxAttempts = 30; // 30 seconds timeout
+        const maxAttempts = 60; // 60 seconds timeout
         let checkInterval;
 
         // Function to check if Storybook server is ready
@@ -246,18 +250,19 @@ export class StorybookPreviewPanel {
                     // Server not ready yet, continue polling
                     if (attempts >= maxAttempts) {
                         clearInterval(checkInterval);
+                        if (loadingHint) loadingHint.style.display = 'none';
                         loading.innerHTML = \`
                             <div class="spinner" style="display: none;"></div>
                             <div class="error">
                                 <strong>Storybook failed to start</strong>
                                 <p style="margin: 12px 0 8px 0; font-size: 13px; line-height: 1.5;">
-                                    The Storybook server didn't respond within 30 seconds.
+                                    The Storybook server didn't respond within 60 seconds.
                                 </p>
                                 <p style="margin: 8px 0; font-size: 12px; line-height: 1.5; opacity: 0.9;">
                                     Please close this window and try again. If the problem persists:<br>
-                                    1. Make sure dependencies are installed: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm install</code><br>
-                                    2. Ensure Storybook is configured: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npx storybook@latest init</code><br>
-                                    3. Check the Debug Console for error messages<br>
+                                    1. Check the <strong>Storybook</strong> output panel for detailed logs<br>
+                                    2. Make sure dependencies are installed: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm install</code><br>
+                                    3. Ensure Storybook is configured: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npx storybook@latest init</code><br>
                                     4. Try manually running: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm run storybook</code>
                                 </p>
                             </div>

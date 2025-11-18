@@ -9,12 +9,33 @@ export class StorybookServer {
   private port: number = 6006;
   private workspacePath: string;
   private inactivityTimer: NodeJS.Timeout | undefined;
-  private readonly INACTIVITY_TIMEOUT = 5 * 60 * 1000; // 5 minutes
   private isIntentionalStop: boolean = false;
+  private outputChannel: vscode.OutputChannel | undefined;
+  private showingOutput: boolean = false;
 
   private constructor(extensionPath: string) {
     // Get the workspace path for Storybook
     this.workspacePath = this.getStorybookWorkspacePath();
+
+    // Create output channel for Storybook logs
+    this.outputChannel = vscode.window.createOutputChannel("Storybook");
+  }
+
+  /**
+   * Strip ANSI escape codes from text for clean output display
+   */
+  private stripAnsi(text: string): string {
+    // Remove ANSI escape codes (e.g., \x1b[1m, \x1b[22m, \x1b[0m)
+    return text.replace(/\x1b\[[0-9;]*m/g, '');
+  }
+
+  /**
+   * Get the inactivity timeout in milliseconds from configuration
+   */
+  private getInactivityTimeout(): number {
+    const config = vscode.workspace.getConfiguration('storybookview');
+    const timeoutMinutes = config.get('inactivityTimeout', 5) as number;
+    return timeoutMinutes * 60 * 1000; // Convert minutes to milliseconds
   }
 
   /**
@@ -71,12 +92,37 @@ export class StorybookServer {
     }
 
     return new Promise((resolve, reject) => {
+      // First, validate that the configured Storybook path exists
+      if (!fs.existsSync(this.workspacePath)) {
+        const config = vscode.workspace.getConfiguration('storybookview');
+        const configuredPath = config.get('storybookPath', '') as string;
+
+        if (configuredPath && configuredPath.trim() !== '') {
+          reject(
+            new Error(
+              `Configured Storybook path does not exist: "${configuredPath}"\n\n` +
+              `Please update the "storybookview.storybookPath" setting to point to the correct directory containing your Storybook configuration.\n` +
+              `Current configured path resolves to: ${this.workspacePath}`
+            )
+          );
+        } else {
+          reject(
+            new Error(
+              `Workspace path does not exist: ${this.workspacePath}`
+            )
+          );
+        }
+        return;
+      }
+
       // Check if workspace dependencies are installed
       const nodeModulesPath = path.join(this.workspacePath, "node_modules");
       if (!fs.existsSync(nodeModulesPath)) {
         reject(
           new Error(
-            "Dependencies not installed. Please run: npm install"
+            `Dependencies not installed in: ${this.workspacePath}\n\n` +
+            `Please run: npm install\n\n` +
+            `If you have a custom Storybook location, update the "storybookview.storybookPath" setting.`
           )
         );
         return;
@@ -87,7 +133,9 @@ export class StorybookServer {
       if (!fs.existsSync(storybookConfigPath)) {
         reject(
           new Error(
-            "Storybook not configured. Please run: npx storybook@latest init"
+            `.storybook directory not found in: ${this.workspacePath}\n\n` +
+            `Please run: npx storybook@latest init\n\n` +
+            `If you have a custom Storybook location, update the "storybookview.storybookPath" setting.`
           )
         );
         return;
@@ -119,6 +167,16 @@ export class StorybookServer {
       console.log(`[Storybook] Process spawned (PID: ${this.storybookProcess.pid})`);
       console.log(`[Storybook] Waiting for server to be ready on port ${this.port}...`);
 
+      // Show the output channel during startup
+      this.showingOutput = true;
+      this.outputChannel?.clear();
+      this.outputChannel?.appendLine("=== Starting Storybook Server ===");
+      this.outputChannel?.appendLine(`Working directory: ${this.workspacePath}`);
+      this.outputChannel?.appendLine(`Port: ${this.port}`);
+      this.outputChannel?.appendLine(`Command: npx storybook dev -p ${this.port} --ci --quiet --disable-telemetry`);
+      this.outputChannel?.appendLine("=====================================\n");
+      this.outputChannel?.show(true); // Show but preserve focus on editor
+
       let serverStarted = false;
       let errorOutput = "";
 
@@ -134,6 +192,13 @@ export class StorybookServer {
           serverStarted = true;
           clearInterval(pollInterval);
           console.log(`[Storybook] Server detected as ready via port polling on port ${this.port}`);
+
+          // Stop showing output once server is up
+          if (this.showingOutput) {
+            this.outputChannel?.appendLine("\n=== Storybook Server Ready ===");
+            this.showingOutput = false;
+          }
+
           resolve(this.port);
         }
       }, 2000); // Check every 2 seconds
@@ -141,6 +206,11 @@ export class StorybookServer {
       this.storybookProcess.stdout?.on("data", (data) => {
         const output = data.toString();
         console.log("[Storybook stdout]:", output);
+
+        // Show output in output channel during startup (strip ANSI codes for clean display)
+        if (this.showingOutput) {
+          this.outputChannel?.append(this.stripAnsi(output));
+        }
 
         // Look for Storybook server start message with more flexible detection
         // Storybook 7+ uses different output formats, so check for multiple patterns
@@ -162,6 +232,13 @@ export class StorybookServer {
               this.port = parseInt(portMatch[1], 10);
             }
             console.log(`[Storybook] Server detected as started via stdout on port ${this.port}`);
+
+            // Stop showing output once server is up
+            if (this.showingOutput) {
+              this.outputChannel?.appendLine("\n=== Storybook Server Ready ===");
+              this.showingOutput = false;
+            }
+
             resolve(this.port);
           }
         }
@@ -170,6 +247,11 @@ export class StorybookServer {
       this.storybookProcess.stderr?.on("data", (data) => {
         const error = data.toString();
         console.log("[Storybook stderr]:", error);
+
+        // Show output in output channel during startup (strip ANSI codes for clean display)
+        if (this.showingOutput) {
+          this.outputChannel?.append(this.stripAnsi(error));
+        }
 
         // Many "errors" are just warnings or info messages in stderr
         // Only accumulate actual errors
@@ -224,11 +306,12 @@ export class StorybookServer {
     });
   }
 
-  public stop(): void {
+  public stop(): Promise<void> {
     console.log("[Storybook] Stopping Storybook server...");
 
     // Mark this as an intentional stop to avoid error messages
     this.isIntentionalStop = true;
+    this.showingOutput = false;
 
     // Clear inactivity timer
     if (this.inactivityTimer) {
@@ -236,15 +319,40 @@ export class StorybookServer {
       this.inactivityTimer = undefined;
     }
 
-    if (this.storybookProcess) {
-      // On Windows, need to kill the entire process tree
-      if (process.platform === "win32") {
-        spawn("taskkill", ["/pid", this.storybookProcess.pid!.toString(), "/f", "/t"]);
+    return new Promise((resolve) => {
+      if (this.storybookProcess) {
+        const pid = this.storybookProcess.pid;
+
+        // On Windows, need to kill the entire process tree
+        if (process.platform === "win32" && pid) {
+          const killProcess = spawn("taskkill", ["/pid", pid.toString(), "/f", "/t"]);
+
+          killProcess.on('exit', (code) => {
+            console.log(`[Storybook] Process tree killed (exit code: ${code})`);
+            this.outputChannel?.appendLine("\n=== Storybook Server Stopped ===");
+            this.storybookProcess = undefined;
+            resolve();
+          });
+
+          // Timeout fallback in case taskkill doesn't respond
+          setTimeout(() => {
+            console.log("[Storybook] Kill command timeout, continuing cleanup");
+            this.outputChannel?.appendLine("\n=== Storybook Server Stopped (timeout) ===");
+            this.storybookProcess = undefined;
+            resolve();
+          }, 2000);
+        } else {
+          // Unix-like systems
+          this.storybookProcess.kill();
+          this.outputChannel?.appendLine("\n=== Storybook Server Stopped ===");
+          this.storybookProcess = undefined;
+          // Give it a moment to clean up
+          setTimeout(() => resolve(), 500);
+        }
       } else {
-        this.storybookProcess.kill();
+        resolve();
       }
-      this.storybookProcess = undefined;
-    }
+    });
   }
 
   public resetInactivityTimer(): void {
@@ -253,16 +361,20 @@ export class StorybookServer {
       clearTimeout(this.inactivityTimer);
     }
 
+    // Get configured timeout
+    const timeout = this.getInactivityTimeout();
+    const timeoutMinutes = Math.round(timeout / 60000);
+
     // Set new timer
     this.inactivityTimer = setTimeout(() => {
       console.log(
-        "[Storybook] Inactivity timeout reached. Stopping Storybook..."
+        `[Storybook] Inactivity timeout reached (${timeoutMinutes} minutes). Stopping Storybook...`
       );
       this.stop();
       vscode.window.showInformationMessage(
-        "Storybook server automatically stopped due to inactivity (5 minutes)"
+        `Storybook server automatically stopped due to inactivity (${timeoutMinutes} minute${timeoutMinutes !== 1 ? 's' : ''})`
       );
-    }, this.INACTIVITY_TIMEOUT);
+    }, timeout);
   }
 
   public getPort(): number {
