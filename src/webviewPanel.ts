@@ -97,26 +97,33 @@ export class StorybookPreviewPanel {
       this.storybookServer.resetInactivityTimer();
     });
 
-    // Show webview immediately with loading state
-    const storybookUrl = this.getStorybookUrl(componentName);
-    this.panel.webview.html = this.getWebviewContent(
-      storybookUrl,
-      componentName
-    );
-
-    // Start Storybook server if not running (don't wait - let webview poll)
+    // Start Storybook server if not running
     try {
       if (!(await this.storybookServer.isRunning())) {
-        // Start server in background - don't await
+        // Show webview with loading state
+        const storybookUrl = this.getStorybookUrl(componentName);
+        this.panel.webview.html = this.getWebviewContent(
+          storybookUrl,
+          componentName
+        );
+
+        // Start server in background - don't await, but close panel on failure
         this.storybookServer.start().catch((error) => {
           const message =
             error instanceof Error ? error.message : "Unknown error";
           vscode.window.showErrorMessage(
             `Failed to start Storybook: ${message}`
           );
+          // Close the panel since Storybook failed to start
+          this.panel.dispose();
         });
       } else {
-        // Reset inactivity timer if already running
+        // Server already running - show webview and reset timer
+        const storybookUrl = this.getStorybookUrl(componentName);
+        this.panel.webview.html = this.getWebviewContent(
+          storybookUrl,
+          componentName
+        );
         this.storybookServer.resetInactivityTimer();
       }
     } catch (error) {
@@ -124,6 +131,8 @@ export class StorybookPreviewPanel {
       vscode.window.showErrorMessage(
         `Failed to check Storybook status: ${message}`
       );
+      // Close the panel on error
+      this.panel.dispose();
     }
   }
 

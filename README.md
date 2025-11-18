@@ -1,6 +1,6 @@
 # Storybook View for VSCode
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/sethcarney/storybook-view)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/sethcarney/storybook-view)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Preview React components with Storybook directly in VSCode.
@@ -59,7 +59,6 @@ export const Primary: Story = {
 {
   "storybookview.storybookPath": "",     // Path to Storybook (leave empty for workspace root)
   "storybookview.port": 6006,            // Storybook server port
-  "storybookview.autoRefresh": true,     // Auto-refresh on file changes
   "storybookview.inactivityTimeout": 5   // Auto-stop server after N minutes of inactivity (1-60)
 }
 ```
@@ -81,12 +80,14 @@ The Storybook server automatically stops after a period of inactivity to save sy
 ## Troubleshooting
 
 **Storybook won't start:**
+- Check the "Storybook" output channel (View > Output > Storybook) for detailed logs
+- Try running manually: `cd your-project && npx storybook dev`
 - Verify Storybook works: `npm run storybook`
-- Check port 6006 is available
-- If using a custom Storybook location, verify `storybookview.storybookPath` setting is correct
+- Check the configured port is available
 
-**"Configured Storybook path does not exist" error:**
-- Update the `storybookview.storybookPath` setting to point to the correct directory
+**".storybook directory not found" error:**
+- Initialize Storybook: `npx storybook@latest init`
+- Or update the `storybookview.storybookPath` setting to point to the correct directory
 - The path should be relative to your workspace root
 - Leave empty if Storybook is in the workspace root
 

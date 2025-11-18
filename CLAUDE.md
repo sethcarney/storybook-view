@@ -75,7 +75,7 @@ The extension acts as a **wrapper around your existing Storybook setup**. It doe
   - Docs page shows all story variations for the component
 - **Webview Polling**:
   - JavaScript in webview polls `http://localhost:6006/` every second
-  - 30-second timeout with helpful error message
+  - 60-second timeout with helpful error message
   - Once connected, loads component-specific URL in iframe
 - **File Watching**:
   - Watches component file for changes
@@ -184,8 +184,9 @@ export const Variant: Story = {
 
 Available in VSCode settings:
 
+- `storybookview.storybookPath`: Path to Storybook directory relative to workspace root (default: "")
 - `storybookview.port`: Storybook server port (default: 6006)
-- `storybookview.autoRefresh`: Auto-refresh on file changes (default: true)
+- `storybookview.inactivityTimeout`: Auto-stop server after N minutes of inactivity (default: 5, range: 1-60)
 
 ## Server Lifecycle Management
 
@@ -280,10 +281,11 @@ storybook-view/
 
 ### Storybook Won't Start
 
-1. Check `test-app` dependencies are installed: `cd test-app && npm install`
-2. Verify Storybook works standalone: `cd test-app && npm run storybook`
-3. Check port 6006 isn't already in use
-4. Review Debug Console for error messages
+1. Check the "Storybook" output channel (View > Output > Storybook) for detailed logs
+2. Try running manually: `cd your-project && npx storybook dev`
+3. Verify Storybook works standalone: `npm run storybook`
+4. Check port isn't already in use
+5. If ".storybook directory not found" error: either initialize Storybook or update `storybookview.storybookPath` setting
 
 ### Component Not Found in Storybook
 

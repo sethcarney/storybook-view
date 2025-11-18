@@ -91,11 +91,6 @@
           "default": 6006,
           "description": "Port for the Storybook server"
         },
-        "storybookview.autoRefresh": {
-          "type": "boolean",
-          "default": true,
-          "description": "Automatically refresh preview on file changes"
-        },
         "storybookview.inactivityTimeout": {
           "type": "number",
           "default": 5,

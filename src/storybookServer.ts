@@ -80,6 +80,11 @@ export class StorybookServer {
     // Reset inactivity timer
     this.resetInactivityTimer();
 
+    // Re-read settings from config in case user updated them
+    this.workspacePath = this.getStorybookWorkspacePath();
+    const config = vscode.workspace.getConfiguration('storybookview');
+    this.port = config.get('port', 6006) as number;
+
     if (this.storybookProcess) {
       return this.port;
     }
@@ -92,50 +97,21 @@ export class StorybookServer {
     }
 
     return new Promise((resolve, reject) => {
-      // First, validate that the configured Storybook path exists
-      if (!fs.existsSync(this.workspacePath)) {
-        const config = vscode.workspace.getConfiguration('storybookview');
-        const configuredPath = config.get('storybookPath', '') as string;
-
-        if (configuredPath && configuredPath.trim() !== '') {
-          reject(
-            new Error(
-              `Configured Storybook path does not exist: "${configuredPath}"\n\n` +
-              `Please update the "storybookview.storybookPath" setting to point to the correct directory containing your Storybook configuration.\n` +
-              `Current configured path resolves to: ${this.workspacePath}`
-            )
-          );
-        } else {
-          reject(
-            new Error(
-              `Workspace path does not exist: ${this.workspacePath}`
-            )
-          );
-        }
-        return;
-      }
-
-      // Check if workspace dependencies are installed
-      const nodeModulesPath = path.join(this.workspacePath, "node_modules");
-      if (!fs.existsSync(nodeModulesPath)) {
-        reject(
-          new Error(
-            `Dependencies not installed in: ${this.workspacePath}\n\n` +
-            `Please run: npm install\n\n` +
-            `If you have a custom Storybook location, update the "storybookview.storybookPath" setting.`
-          )
-        );
-        return;
-      }
-
-      // Check if Storybook is configured
+      // Check for .storybook directory - this is the primary validation
+      // If it doesn't exist, the directory isn't configured properly for Storybook
       const storybookConfigPath = path.join(this.workspacePath, ".storybook");
       if (!fs.existsSync(storybookConfigPath)) {
+        const config = vscode.workspace.getConfiguration('storybookview');
+        const configuredPath = config.get('storybookPath', '') as string;
+        const configInfo = configuredPath
+          ? `\n\nConfigured path "${configuredPath}" resolves to: ${this.workspacePath}`
+          : `\n\nCurrent directory: ${this.workspacePath}`;
+
         reject(
           new Error(
-            `.storybook directory not found in: ${this.workspacePath}\n\n` +
-            `Please run: npx storybook@latest init\n\n` +
-            `If you have a custom Storybook location, update the "storybookview.storybookPath" setting.`
+            `.storybook directory not found. ` +
+            `Either initialize Storybook with "npx storybook@latest init" or ` +
+            `update "storybookview.storybookPath" in VS Code settings to point to your Storybook project.${configInfo}`
           )
         );
         return;
@@ -178,7 +154,6 @@ export class StorybookServer {
       this.outputChannel?.show(true); // Show but preserve focus on editor
 
       let serverStarted = false;
-      let errorOutput = "";
 
       // Poll the port to detect when server is ready (fallback if stdout parsing fails)
       const pollInterval = setInterval(async () => {
@@ -252,19 +227,6 @@ export class StorybookServer {
         if (this.showingOutput) {
           this.outputChannel?.append(this.stripAnsi(error));
         }
-
-        // Many "errors" are just warnings or info messages in stderr
-        // Only accumulate actual errors
-        if (error.includes("Error:") || error.includes("EADDRINUSE") || error.includes("failed")) {
-          errorOutput += error;
-        }
-
-        // Only show critical errors to user
-        if (error.includes("Error:") || error.includes("EADDRINUSE")) {
-          vscode.window.showErrorMessage(
-            `Storybook Error: ${error.substring(0, 200)}`
-          );
-        }
       });
 
       this.storybookProcess.on("error", (error) => {
@@ -283,10 +245,11 @@ export class StorybookServer {
 
         if (!serverStarted && !wasIntentionalStop) {
           // Only reject if this was not an intentional stop
-          const errorMsg = errorOutput
-            ? `Storybook failed: ${errorOutput.substring(0, 500)}`
-            : `Storybook failed to start (exit code: ${code})`;
-          reject(new Error(errorMsg));
+          // Point user to Output Channel for details and suggest manual run
+          reject(new Error(
+            `Storybook failed to start. Check the "Storybook" output channel for details. ` +
+            `Try running manually: cd "${this.workspacePath}" && npx storybook dev`
+          ));
         } else if (wasIntentionalStop) {
           console.log("[Storybook] Server stopped intentionally");
         }
@@ -378,6 +341,9 @@ export class StorybookServer {
   }
 
   public getPort(): number {
+    // Always read from config to ensure we have the latest value
+    const config = vscode.workspace.getConfiguration('storybookview');
+    this.port = config.get('port', 6006) as number;
     return this.port;
   }
 
@@ -397,18 +363,7 @@ export class StorybookServer {
   }
 
   public getUrl(): string {
-    return `http://localhost:${this.port}`;
-  }
-
-  /**
-   * Get the URL for a specific component's story
-   * @param componentName The name of the component (e.g., "Button", "Card")
-   * @param storyName Optional specific story name (e.g., "Primary", "Default")
-   */
-  public getComponentUrl(componentName: string, storyName?: string): string {
-    const baseUrl = this.getUrl();
-    const storyPath = `components-${componentName.toLowerCase()}--${storyName?.toLowerCase() || "default"}`;
-    return `${baseUrl}/?path=/story/${storyPath}`;
+    return `http://localhost:${this.getPort()}`;
   }
 
   /**
