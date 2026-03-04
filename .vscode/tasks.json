@@ -2,8 +2,8 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "compile",
+      "type": "shell",
+      "command": "bun run compile",
       "label": "npm: compile",
       "problemMatcher": "$tsc",
       "presentation": {
@@ -15,8 +15,8 @@
       }
     },
     {
-      "type": "npm",
-      "script": "watch",
+      "type": "shell",
+      "command": "bun run watch",
       "label": "npm: watch",
       "problemMatcher": "$tsc-watch",
       "isBackground": true,

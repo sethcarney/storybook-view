@@ -30,11 +30,15 @@ export function activate(context: vscode.ExtensionContext) {
       // If this is a .stories file, find the corresponding component file
       let componentUri = targetUri;
       if (targetUri.fsPath.includes(".stories.")) {
-        const componentPath = targetUri.fsPath.replace(
+        const base = targetUri.fsPath.replace(
           /\.stories\.(tsx|jsx|ts|js|vue|svelte)$/,
-          ".$1"
+          ""
         );
-        if (fs.existsSync(componentPath)) {
+        const candidateExts = ["tsx", "jsx", "ts", "js", "vue", "svelte"];
+        const componentPath = candidateExts
+          .map(ext => `${base}.${ext}`)
+          .find(p => fs.existsSync(p));
+        if (componentPath) {
           componentUri = vscode.Uri.file(componentPath);
         } else {
           vscode.window.showErrorMessage(

@@ -107,6 +107,9 @@
       }
     }
   },
+  "workspaces": [
+    "test-apps/*"
+  ],
   "scripts": {
     "clean": "bun -e \"require('fs').rmSync('out', {recursive: true, force: true})\"",
     "vscode:prepublish": "bun run compile",

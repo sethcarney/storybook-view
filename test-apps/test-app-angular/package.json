@@ -19,6 +19,7 @@
     "@angular/cli": "^17.3.0",
     "@angular/compiler-cli": "^17.3.0",
     "@angular-devkit/build-angular": "^17.3.0",
+    "@babel/runtime": "^7.24.0",
     "@storybook/addon-docs": "^8.1.0",
     "@storybook/angular": "^8.1.0",
     "storybook": "^8.1.0",

@@ -124,8 +124,8 @@ export class StorybookServer {
       const isWindows = process.platform === "win32";
       // npm and pnpm require "--" to forward args to the script; yarn and bun do not
       const noOpenArgs = (pm === "npm" || pm === "pnpm")
-        ? ["run", "storybook", "--", "--no-open"]
-        : ["run", "storybook", "--no-open"];
+        ? ["run", "storybook", "--", "--no-open", "--disable-telemetry"]
+        : ["run", "storybook", "--no-open", "--disable-telemetry"];
       this.storybookProcess = spawn(pm, noOpenArgs, {
         cwd: this.workspacePath,
         shell: true,
@@ -343,8 +343,23 @@ export class StorybookServer {
   }
 
   /**
-   * Detect the package manager (bun, yarn, pnpm, or npm) based on lockfiles
-   * in the Storybook directory and the VSCode workspace root.
+   * Check if a command is available on PATH by running it with --version.
+   */
+  private isCommandAvailable(cmd: string): boolean {
+    try {
+      const { execSync } = require("child_process");
+      execSync(`${cmd} --version`, { stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Detect the package manager based on lockfiles, then verify it is installed.
+   * Priority order: bun > yarn > pnpm > npm.
+   * If the lockfile-detected manager isn't available, falls back through the
+   * remaining managers in priority order.
    */
   private getPackageManager(): string {
     const vscodeRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
@@ -352,17 +367,41 @@ export class StorybookServer {
     if (vscodeRoot && vscodeRoot !== this.workspacePath) {
       dirsToCheck.push(vscodeRoot);
     }
+
+    let detected: string | undefined;
     for (const dir of dirsToCheck) {
       if (fs.existsSync(path.join(dir, "bun.lock")) || fs.existsSync(path.join(dir, "bun.lockb"))) {
-        return "bun";
+        detected = "bun";
+        break;
       }
       if (fs.existsSync(path.join(dir, "yarn.lock"))) {
-        return "yarn";
+        detected = "yarn";
+        break;
       }
       if (fs.existsSync(path.join(dir, "pnpm-lock.yaml"))) {
-        return "pnpm";
+        detected = "pnpm";
+        break;
       }
     }
+
+    // Verify the detected manager is actually installed; fall back if not.
+    const candidates = ["bun", "yarn", "pnpm", "npm"];
+    const ordered = detected
+      ? [detected, ...candidates.filter(c => c !== detected)]
+      : candidates;
+
+    for (const pm of ordered) {
+      if (this.isCommandAvailable(pm)) {
+        if (pm !== detected && detected) {
+          this.outputChannel?.appendLine(
+            `[Storybook] Lockfile suggests "${detected}" but it was not found. Falling back to "${pm}".`
+          );
+        }
+        return pm;
+      }
+    }
+
+    // Should never reach here on a normal dev machine, but just in case.
     return "npm";
   }
 
