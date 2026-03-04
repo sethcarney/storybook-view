@@ -11,14 +11,14 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "svelte": "^4.2.0"
+    "svelte": "^5.0.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.2",
     "@storybook/addon-a11y": "^10.0.2",
     "@storybook/addon-docs": "^10.0.2",
     "@storybook/svelte-vite": "^10.0.2",
-    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@sveltejs/vite-plugin-svelte": "^4.0.0",
     "storybook": "^10.0.2",
     "typescript": "^5.2.2",
     "vite": "^5.4.14"
