@@ -123,14 +123,17 @@ export class StorybookServer {
 
       const isWindows = process.platform === "win32";
       // npm and pnpm require "--" to forward args to the script; yarn and bun do not
+      // npm and pnpm require "--" to forward args to the underlying script
       const noOpenArgs = (pm === "npm" || pm === "pnpm")
-        ? ["run", "storybook", "--", "--no-open", "--disable-telemetry"]
-        : ["run", "storybook", "--no-open", "--disable-telemetry"];
+        ? ["run", "storybook", "--", "--no-open"]
+        : ["run", "storybook", "--no-open"];
       this.storybookProcess = spawn(pm, noOpenArgs, {
         cwd: this.workspacePath,
         shell: true,
         stdio: ["ignore", "pipe", "pipe"],
-        env: { ...process.env },
+        // Use env var for telemetry opt-out — works across all frameworks
+        // (Angular's ng builder doesn't forward unknown CLI flags)
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1" },
         // On Unix, detached=true makes the shell a process group leader so we
         // can kill the entire tree (shell + npm + storybook node process)
         detached: !isWindows
