@@ -1,7 +1,7 @@
 {
   "name": "storybook-view",
   "displayName": "Storybook View",
-  "description": "Storybook integration for VSCode - preview React components with all Storybook features directly in your editor",
+  "description": "Storybook integration for VSCode - preview components (React, Angular, Vue, Svelte) with all Storybook features directly in your editor",
   "version": "1.1.0",
   "publisher": "sethssoftware",
   "repository": {
@@ -15,6 +15,9 @@
   "keywords": [
     "storybook",
     "react",
+    "angular",
+    "vue",
+    "svelte",
     "component",
     "preview",
     "ui",
@@ -24,7 +27,8 @@
   "license": "MIT",
   "icon": "icon/icon.png",
   "engines": {
-    "vscode": "^1.74.0"
+    "vscode": "^1.74.0",
+     "bun": ">=1.0.0"
   },
   "categories": [
     "Visualization",
@@ -34,7 +38,9 @@
     "onLanguage:javascript",
     "onLanguage:javascriptreact",
     "onLanguage:typescript",
-    "onLanguage:typescriptreact"
+    "onLanguage:typescriptreact",
+    "onLanguage:vue",
+    "onLanguage:svelte"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -66,14 +72,14 @@
       "editor/title": [
         {
           "command": "storybookview.openPreview",
-          "when": "resourceFilename =~ /\\.stories\\.(jsx|tsx)$/",
+          "when": "resourceFilename =~ /\\.stories\\.(jsx|tsx|ts|js|vue|svelte)$/",
           "group": "navigation"
         }
       ],
       "editor/context": [
         {
           "command": "storybookview.openPreview",
-          "when": "resourceFilename =~ /\\.stories\\.(jsx|tsx)$/",
+          "when": "resourceFilename =~ /\\.stories\\.(jsx|tsx|ts|js|vue|svelte)$/",
           "group": "navigation"
         }
       ]
@@ -101,19 +107,22 @@
       }
     }
   },
+  "workspaces": [
+    "test-apps/*"
+  ],
   "scripts": {
-    "clean": "node -e \"require('fs').rmSync('out', {recursive: true, force: true})\"",
-    "vscode:prepublish": "npm run compile",
+    "clean": "bun -e \"require('fs').rmSync('out', {recursive: true, force: true})\"",
+    "vscode:prepublish": "bun run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
+    "pretest": "bun run compile && bun run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "npm run clean && vsce package",
-    "install-extension": "code --install-extension storybook-view-1.0.0.vsix",
-    "setup": "cd test-app && npm install",
-    "dev": "npm run watch",
-    "storybook": "cd test-app && npm run storybook"
+    "package": "bun run clean && vsce package",
+    "install-extension": "code --install-extension storybook-view-1.1.0.vsix",
+    "setup": "cd test-apps/test-app-react && bun install",
+    "dev": "bun run watch",
+    "storybook": "cd test-apps/test-app-react && bun run storybook"
   },
   "devDependencies": {
     "@types/node": "^16.18.126",
@@ -125,8 +134,5 @@
     "prettier": "3.6.2",
     "typescript": "^4.9.4",
     "vsce": "^2.15.0"
-  },
-  "volta": {
-    "node": "24.11.0"
   }
 }

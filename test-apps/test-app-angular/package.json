@@ -1,0 +1,28 @@
+{
+  "name": "angular-storybook-test-app",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "storybook": "ng run angular-storybook-test-app:storybook",
+    "build-storybook": "ng run angular-storybook-test-app:build-storybook"
+  },
+  "dependencies": {
+    "@angular/common": "^17.3.0",
+    "@angular/compiler": "^17.3.0",
+    "@angular/core": "^17.3.0",
+    "@angular/platform-browser": "^17.3.0",
+    "rxjs": "^7.8.1",
+    "tslib": "^2.6.2",
+    "zone.js": "^0.14.4"
+  },
+  "devDependencies": {
+    "@angular/cli": "^17.3.0",
+    "@angular/compiler-cli": "^17.3.0",
+    "@angular-devkit/build-angular": "^17.3.0",
+    "@babel/runtime": "^7.24.0",
+    "@storybook/addon-docs": "^8.1.0",
+    "@storybook/angular": "^8.1.0",
+    "storybook": "^8.1.0",
+    "typescript": "^5.4.0"
+  }
+}

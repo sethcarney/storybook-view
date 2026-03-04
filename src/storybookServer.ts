@@ -97,6 +97,8 @@ export class StorybookServer {
     }
 
     return new Promise((resolve, reject) => {
+      const pm = this.getPackageManager();
+
       // Check for .storybook directory - this is the primary validation
       // If it doesn't exist, the directory isn't configured properly for Storybook
       const storybookConfigPath = path.join(this.workspacePath, ".storybook");
@@ -110,34 +112,31 @@ export class StorybookServer {
         reject(
           new Error(
             `.storybook directory not found. ` +
-            `Either initialize Storybook with "npx storybook@latest init" or ` +
-            `update "storybookview.storybookPath" in VS Code settings to point to your Storybook project.${configInfo}`
+            `Ensure your project has a .storybook config directory and a "storybook" script in package.json, ` +
+            `or update "storybookview.storybookPath" in VS Code settings to point to your Storybook project.${configInfo}`
           )
         );
         return;
       }
 
-      // Start Storybook dev server directly with CLI options
-      const isWindows = process.platform === "win32";
-      const npxCmd = isWindows ? "npx.cmd" : "npx";
-
       console.log("[Storybook] Starting Storybook server...");
 
-      // Run storybook directly with specific CLI options
-      const storybookArgs = [
-        "storybook",
-        "dev",
-        "-p", this.port.toString(),
-        "--ci",                   // CI mode: skip prompts, don't open browser
-        "--quiet",                // Reduce console output noise
-        "--disable-telemetry",    // Disable telemetry for better performance
-        "--config-dir", ".storybook"  // Explicit config directory
-      ];
-
-      this.storybookProcess = spawn(npxCmd, storybookArgs, {
+      const isWindows = process.platform === "win32";
+      // npm and pnpm require "--" to forward args to the script; yarn and bun do not
+      // npm and pnpm require "--" to forward args to the underlying script
+      const noOpenArgs = (pm === "npm" || pm === "pnpm")
+        ? ["run", "storybook", "--", "--no-open"]
+        : ["run", "storybook", "--no-open"];
+      this.storybookProcess = spawn(pm, noOpenArgs, {
         cwd: this.workspacePath,
         shell: true,
-        stdio: ["ignore", "pipe", "pipe"]
+        stdio: ["ignore", "pipe", "pipe"],
+        // Use env var for telemetry opt-out — works across all frameworks
+        // (Angular's ng builder doesn't forward unknown CLI flags)
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1" },
+        // On Unix, detached=true makes the shell a process group leader so we
+        // can kill the entire tree (shell + npm + storybook node process)
+        detached: !isWindows
       });
 
       console.log(`[Storybook] Process spawned (PID: ${this.storybookProcess.pid})`);
@@ -149,7 +148,7 @@ export class StorybookServer {
       this.outputChannel?.appendLine("=== Starting Storybook Server ===");
       this.outputChannel?.appendLine(`Working directory: ${this.workspacePath}`);
       this.outputChannel?.appendLine(`Port: ${this.port}`);
-      this.outputChannel?.appendLine(`Command: npx storybook dev -p ${this.port} --ci --quiet --disable-telemetry`);
+      this.outputChannel?.appendLine(`Command: ${pm} ${noOpenArgs.join(" ")}`);
       this.outputChannel?.appendLine("=====================================\n");
       this.outputChannel?.show(true); // Show but preserve focus on editor
 
@@ -187,36 +186,8 @@ export class StorybookServer {
           this.outputChannel?.append(this.stripAnsi(output));
         }
 
-        // Look for Storybook server start message with more flexible detection
-        // Storybook 7+ uses different output formats, so check for multiple patterns
-        if (!serverStarted) {
-          const isStarted =
-            output.includes("started") ||
-            output.includes("Local:") ||
-            output.includes("localhost:") ||
-            output.match(/http:\/\/[^\s]+:\d+/) ||
-            (output.includes("Storybook") && output.match(/\d{1,5}/)) ||
-            output.includes("serving static files from");
-
-          if (isStarted) {
-            serverStarted = true;
-            clearInterval(pollInterval);
-            // Extract port from output if present
-            const portMatch = output.match(/:(\d+)/);
-            if (portMatch) {
-              this.port = parseInt(portMatch[1], 10);
-            }
-            console.log(`[Storybook] Server detected as started via stdout on port ${this.port}`);
-
-            // Stop showing output once server is up
-            if (this.showingOutput) {
-              this.outputChannel?.appendLine("\n=== Storybook Server Ready ===");
-              this.showingOutput = false;
-            }
-
-            resolve(this.port);
-          }
-        }
+        // Startup detection is handled exclusively by HTTP polling below,
+        // which is more reliable than stdout parsing across different frameworks.
       });
 
       this.storybookProcess.stderr?.on("data", (data) => {
@@ -248,7 +219,7 @@ export class StorybookServer {
           // Point user to Output Channel for details and suggest manual run
           reject(new Error(
             `Storybook failed to start. Check the "Storybook" output channel for details. ` +
-            `Try running manually: cd "${this.workspacePath}" && npx storybook dev`
+            `Try running manually: cd "${this.workspacePath}" && ${pm} run storybook`
           ));
         } else if (wasIntentionalStop) {
           console.log("[Storybook] Server stopped intentionally");
@@ -305,11 +276,19 @@ export class StorybookServer {
             resolve();
           }, 2000);
         } else {
-          // Unix-like systems
-          this.storybookProcess.kill();
+          // Unix-like systems: kill the entire process group
+          if (pid) {
+            try {
+              process.kill(-pid, "SIGTERM");
+            } catch {
+              // Process may have already exited
+              this.storybookProcess?.kill();
+            }
+          } else {
+            this.storybookProcess.kill();
+          }
           this.outputChannel?.appendLine("\n=== Storybook Server Stopped ===");
           this.storybookProcess = undefined;
-          // Give it a moment to clean up
           setTimeout(() => resolve(), 500);
         }
       } else {
@@ -364,6 +343,69 @@ export class StorybookServer {
 
   public getUrl(): string {
     return `http://localhost:${this.getPort()}`;
+  }
+
+  /**
+   * Check if a command is available on PATH by running it with --version.
+   */
+  private isCommandAvailable(cmd: string): boolean {
+    try {
+      const { execSync } = require("child_process");
+      execSync(`${cmd} --version`, { stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Detect the package manager based on lockfiles, then verify it is installed.
+   * Priority order: bun > yarn > pnpm > npm.
+   * If the lockfile-detected manager isn't available, falls back through the
+   * remaining managers in priority order.
+   */
+  private getPackageManager(): string {
+    const vscodeRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const dirsToCheck = [this.workspacePath];
+    if (vscodeRoot && vscodeRoot !== this.workspacePath) {
+      dirsToCheck.push(vscodeRoot);
+    }
+
+    let detected: string | undefined;
+    for (const dir of dirsToCheck) {
+      if (fs.existsSync(path.join(dir, "bun.lock")) || fs.existsSync(path.join(dir, "bun.lockb"))) {
+        detected = "bun";
+        break;
+      }
+      if (fs.existsSync(path.join(dir, "yarn.lock"))) {
+        detected = "yarn";
+        break;
+      }
+      if (fs.existsSync(path.join(dir, "pnpm-lock.yaml"))) {
+        detected = "pnpm";
+        break;
+      }
+    }
+
+    // Verify the detected manager is actually installed; fall back if not.
+    const candidates = ["bun", "yarn", "pnpm", "npm"];
+    const ordered = detected
+      ? [detected, ...candidates.filter(c => c !== detected)]
+      : candidates;
+
+    for (const pm of ordered) {
+      if (this.isCommandAvailable(pm)) {
+        if (pm !== detected && detected) {
+          this.outputChannel?.appendLine(
+            `[Storybook] Lockfile suggests "${detected}" but it was not found. Falling back to "${pm}".`
+          );
+        }
+        return pm;
+      }
+    }
+
+    // Should never reach here on a normal dev machine, but just in case.
+    return "npm";
   }
 
   /**

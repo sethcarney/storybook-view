@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The extension consists of:
 
 1. **VSCode Extension** (`src/`) - TypeScript extension code that manages Storybook server lifecycle
-2. **Test React App** (`test-app/`) - Vite + React + Tailwind + Storybook test application
+2. **Test React App** (`test-apps/test-app-react/`) - Vite + React + Tailwind + Storybook test application
 
 ## Architecture
 
@@ -89,7 +89,7 @@ The extension acts as a **wrapper around your existing Storybook setup**. It doe
 
 ```bash
 npm install              # Install extension dependencies
-cd test-app && npm install  # Install test-app dependencies
+cd test-apps/test-app-react && npm install  # Install test-app dependencies
 npm run compile         # Compile TypeScript
 ```
 
@@ -104,7 +104,7 @@ npm run lint          # Run ESLint on extension code
 ### Testing the Extension
 
 1. Press `F5` in VSCode to launch Extension Development Host
-2. Open component files from `test-app/src/components/`
+2. Open component files from `test-apps/test-app-react/src/components/`
 3. Click eye icon in editor toolbar to preview
 4. Storybook opens showing all story variations
 5. Check Debug Console for logs
@@ -112,7 +112,7 @@ npm run lint          # Run ESLint on extension code
 ### Test App & Storybook
 
 ```bash
-cd test-app
+cd test-apps/test-app-react
 npm run dev           # Start Vite dev server (port 5173)
 npm run storybook     # Start Storybook standalone (port 6006)
 ```
@@ -128,10 +128,10 @@ npm run install-extension       # Installs the .vsix locally
 
 ### Story File Structure
 
-Stories are located in `test-app/src/components/` alongside their components:
+Stories are located in `test-apps/test-app-react/src/components/` alongside their components:
 
 ```
-test-app/src/components/
+test-apps/test-app-react/src/components/
 ├── Button.tsx
 ├── Button.stories.tsx
 ├── Card.tsx
@@ -232,8 +232,8 @@ Available in VSCode settings:
 
 ### Adding a New Test Component
 
-1. Create component in `test-app/src/components/YourComponent.tsx`
-2. Create story file `test-app/src/components/YourComponent.stories.tsx`
+1. Create component in `test-apps/test-app-react/src/components/YourComponent.tsx`
+2. Create story file `test-apps/test-app-react/src/components/YourComponent.stories.tsx`
 3. Export multiple story variations
 4. Click eye icon on component file to preview
 
@@ -258,17 +258,19 @@ storybook-view/
 │   ├── extension.ts           # Main entry point, registers commands
 │   ├── storybookServer.ts     # Storybook server lifecycle manager
 │   └── webviewPanel.ts        # Webview UI manager (iframe wrapper)
-├── test-app/                   # Test React application
-│   ├── .storybook/            # Storybook configuration
-│   │   ├── main.ts            # Stories glob patterns
-│   │   └── preview.ts         # Global settings, Tailwind import
-│   └── src/
-│       └── components/        # Test components and their stories
-│           ├── Button.tsx
-│           ├── Button.stories.tsx
-│           ├── Card.tsx
-│           ├── Card.stories.tsx
-│           └── ...
+├── test-apps/                  # Test applications
+│   ├── test-app-react/        # Test React application
+│   │   ├── .storybook/        # Storybook configuration
+│   │   │   ├── main.ts        # Stories glob patterns
+│   │   │   └── preview.ts     # Global settings, Tailwind import
+│   │   └── src/
+│   │       └── components/    # Test components and their stories
+│   │           ├── Button.tsx
+│   │           ├── Button.stories.tsx
+│   │           ├── Card.tsx
+│   │           ├── Card.stories.tsx
+│   │           └── ...
+│   └── test-app-angular/      # Test Angular application
 ├── out/                        # Compiled JavaScript (gitignored)
 ├── package.json               # Extension manifest and dependencies
 ├── tsconfig.json             # TypeScript configuration
