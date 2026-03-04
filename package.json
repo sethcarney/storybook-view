@@ -2,7 +2,7 @@
   "name": "storybook-view",
   "displayName": "Storybook View",
   "description": "Storybook integration for VSCode - preview components (React, Angular, Vue, Svelte) with all Storybook features directly in your editor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "publisher": "sethssoftware",
   "repository": {
     "type": "git",
@@ -28,7 +28,7 @@
   "icon": "icon/icon.png",
   "engines": {
     "vscode": "^1.74.0",
-     "bun": ">=1.0.0"
+    "bun": ">=1.0.0"
   },
   "categories": [
     "Visualization",
