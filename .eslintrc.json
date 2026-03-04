@@ -20,7 +20,7 @@
     "out",
     "dist",
     "**/*.d.ts",
-    "test-app"
+    "test-apps"
   ],
   "extends": [
     "plugin:storybook/recommended"

@@ -97,6 +97,8 @@ export class StorybookServer {
     }
 
     return new Promise((resolve, reject) => {
+      const pm = this.getPackageManager();
+
       // Check for .storybook directory - this is the primary validation
       // If it doesn't exist, the directory isn't configured properly for Storybook
       const storybookConfigPath = path.join(this.workspacePath, ".storybook");
@@ -110,31 +112,16 @@ export class StorybookServer {
         reject(
           new Error(
             `.storybook directory not found. ` +
-            `Either initialize Storybook with "npx storybook@latest init" or ` +
-            `update "storybookview.storybookPath" in VS Code settings to point to your Storybook project.${configInfo}`
+            `Ensure your project has a .storybook config directory and a "storybook" script in package.json, ` +
+            `or update "storybookview.storybookPath" in VS Code settings to point to your Storybook project.${configInfo}`
           )
         );
         return;
       }
 
-      // Start Storybook dev server directly with CLI options
-      const isWindows = process.platform === "win32";
-      const npxCmd = isWindows ? "npx.cmd" : "npx";
-
       console.log("[Storybook] Starting Storybook server...");
 
-      // Run storybook directly with specific CLI options
-      const storybookArgs = [
-        "storybook",
-        "dev",
-        "-p", this.port.toString(),
-        "--ci",                   // CI mode: skip prompts, don't open browser
-        "--quiet",                // Reduce console output noise
-        "--disable-telemetry",    // Disable telemetry for better performance
-        "--config-dir", ".storybook"  // Explicit config directory
-      ];
-
-      this.storybookProcess = spawn(npxCmd, storybookArgs, {
+      this.storybookProcess = spawn(pm, ["run", "storybook"], {
         cwd: this.workspacePath,
         shell: true,
         stdio: ["ignore", "pipe", "pipe"]
@@ -149,7 +136,7 @@ export class StorybookServer {
       this.outputChannel?.appendLine("=== Starting Storybook Server ===");
       this.outputChannel?.appendLine(`Working directory: ${this.workspacePath}`);
       this.outputChannel?.appendLine(`Port: ${this.port}`);
-      this.outputChannel?.appendLine(`Command: npx storybook dev -p ${this.port} --ci --quiet --disable-telemetry`);
+      this.outputChannel?.appendLine(`Command: ${pm} run storybook`);
       this.outputChannel?.appendLine("=====================================\n");
       this.outputChannel?.show(true); // Show but preserve focus on editor
 
@@ -248,7 +235,7 @@ export class StorybookServer {
           // Point user to Output Channel for details and suggest manual run
           reject(new Error(
             `Storybook failed to start. Check the "Storybook" output channel for details. ` +
-            `Try running manually: cd "${this.workspacePath}" && npx storybook dev`
+            `Try running manually: cd "${this.workspacePath}" && ${pm} run storybook`
           ));
         } else if (wasIntentionalStop) {
           console.log("[Storybook] Server stopped intentionally");
@@ -364,6 +351,30 @@ export class StorybookServer {
 
   public getUrl(): string {
     return `http://localhost:${this.getPort()}`;
+  }
+
+  /**
+   * Detect the package manager (bun, yarn, pnpm, or npm) based on lockfiles
+   * in the Storybook directory and the VSCode workspace root.
+   */
+  private getPackageManager(): string {
+    const vscodeRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const dirsToCheck = [this.workspacePath];
+    if (vscodeRoot && vscodeRoot !== this.workspacePath) {
+      dirsToCheck.push(vscodeRoot);
+    }
+    for (const dir of dirsToCheck) {
+      if (fs.existsSync(path.join(dir, "bun.lock")) || fs.existsSync(path.join(dir, "bun.lockb"))) {
+        return "bun";
+      }
+      if (fs.existsSync(path.join(dir, "yarn.lock"))) {
+        return "yarn";
+      }
+      if (fs.existsSync(path.join(dir, "pnpm-lock.yaml"))) {
+        return "pnpm";
+      }
+    }
+    return "npm";
   }
 
   /**

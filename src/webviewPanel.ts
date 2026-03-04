@@ -138,7 +138,7 @@ export class StorybookPreviewPanel {
 
   private getComponentName(fileName: string): string {
     // Remove file extension
-    return fileName.replace(/\.(tsx|jsx|ts|js)$/, "");
+    return fileName.replace(/\.(tsx|jsx|ts|js|vue|svelte)$/, "");
   }
 
   private getStorybookUrl(componentName: string): string {

@@ -16,13 +16,13 @@ export function activate(context: vscode.ExtensionContext) {
       const targetUri = uri || activeEditor?.document.uri;
 
       if (!targetUri) {
-        vscode.window.showErrorMessage("No React component file selected");
+        vscode.window.showErrorMessage("No component file selected");
         return;
       }
 
-      if (!isReactFile(targetUri.fsPath)) {
+      if (!isComponentFile(targetUri.fsPath)) {
         vscode.window.showErrorMessage(
-          "Please select a React component file (.jsx or .tsx)"
+          "Please select a component file (.jsx, .tsx, .ts, .js, .vue, or .svelte)"
         );
         return;
       }
@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
       let componentUri = targetUri;
       if (targetUri.fsPath.includes(".stories.")) {
         const componentPath = targetUri.fsPath.replace(
-          /\.stories\.(tsx|jsx)$/,
+          /\.stories\.(tsx|jsx|ts|js|vue|svelte)$/,
           ".$1"
         );
         if (fs.existsSync(componentPath)) {
@@ -149,6 +149,6 @@ export async function deactivate() {
   }
 }
 
-function isReactFile(filePath: string): boolean {
-  return /\.(jsx|tsx)$/.test(filePath);
+function isComponentFile(filePath: string): boolean {
+  return /\.(jsx|tsx|ts|js|vue|svelte)$/.test(filePath);
 }

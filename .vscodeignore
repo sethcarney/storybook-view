@@ -21,7 +21,7 @@ src/**
 **/*.ts
 
 # Test app (not needed in extension package)
-test-app/**
+test-apps/**
 
 # Images (exclude all except icon.png)
 images/**

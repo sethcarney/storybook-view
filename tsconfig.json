@@ -8,5 +8,5 @@
     "rootDir": "src",
     "strict": true
   },
-  "exclude": ["node_modules", ".vscode-test", "test-app", "preview-runtime"]
+  "exclude": ["node_modules", ".vscode-test", "test-apps", "preview-runtime"]
 }
