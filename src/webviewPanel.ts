@@ -99,31 +99,21 @@ export class StorybookPreviewPanel {
 
     // Start Storybook server if not running
     try {
-      if (!(await this.storybookServer.isRunning())) {
-        // Show webview with loading state
-        const storybookUrl = this.getStorybookUrl(componentName);
-        this.panel.webview.html = this.getWebviewContent(
-          storybookUrl,
-          componentName
-        );
+      const storybookUrl = this.getStorybookUrl(componentName);
+      this.panel.webview.html = this.getWebviewContent(componentName);
 
-        // Start server in background - don't await, but close panel on failure
-        this.storybookServer.start().catch((error) => {
-          const message =
-            error instanceof Error ? error.message : "Unknown error";
-          vscode.window.showErrorMessage(
-            `Failed to start Storybook: ${message}`
-          );
-          // Close the panel since Storybook failed to start
-          this.panel.dispose();
+      if (!(await this.storybookServer.isRunning())) {
+        // Start server, then tell the webview to load once ready
+        this.storybookServer.start().then(() => {
+          this.panel.webview.postMessage({ command: "load", url: storybookUrl });
+        }).catch((error) => {
+          const message = error instanceof Error ? error.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to start Storybook: ${message}`);
+          this.panel.webview.postMessage({ command: "error", text: message });
         });
       } else {
-        // Server already running - show webview and reset timer
-        const storybookUrl = this.getStorybookUrl(componentName);
-        this.panel.webview.html = this.getWebviewContent(
-          storybookUrl,
-          componentName
-        );
+        // Server already running - tell webview to load immediately
+        this.panel.webview.postMessage({ command: "load", url: storybookUrl });
         this.storybookServer.resetInactivityTimer();
       }
     } catch (error) {
@@ -150,10 +140,8 @@ export class StorybookPreviewPanel {
   }
 
   private getWebviewContent(
-    storybookUrl: string,
     componentName: string
   ): string {
-    const port = this.storybookServer.getPort();
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -226,63 +214,33 @@ export class StorybookPreviewPanel {
     ></iframe>
 
     <script>
+        const vscode = acquireVsCodeApi();
         const iframe = document.getElementById('preview-frame');
         const loading = document.getElementById('loading');
         const loadingText = document.querySelector('.loading-text');
-        const loadingHint = document.querySelector('.loading-hint');
 
-        let attempts = 0;
-        const maxAttempts = 60; // 60 seconds timeout
-        let checkInterval;
-
-        // Function to check if Storybook server is ready
-        function checkServer() {
-            attempts++;
-            loadingText.textContent = \`Starting Storybook... (\${attempts}s)\`;
-
-            fetch('http://localhost:${port}/')
-                .then(response => {
-                    if (response.ok) {
-                        clearInterval(checkInterval);
-                        loadingText.textContent = 'Loading ${componentName} stories...';
-
-                        // Server is ready, load the iframe with the specific component
-                        iframe.src = '${storybookUrl}';
-                        iframe.style.display = 'block';
-
-                        iframe.onload = function() {
-                            loading.style.display = 'none';
-                        };
-                    }
-                })
-                .catch(err => {
-                    // Server not ready yet, continue polling
-                    if (attempts >= maxAttempts) {
-                        clearInterval(checkInterval);
-                        if (loadingHint) loadingHint.style.display = 'none';
-                        loading.innerHTML = \`
-                            <div class="spinner" style="display: none;"></div>
-                            <div class="error">
-                                <strong>Storybook failed to start</strong>
-                                <p style="margin: 12px 0 8px 0; font-size: 13px; line-height: 1.5;">
-                                    The Storybook server didn't respond within 60 seconds.
-                                </p>
-                                <p style="margin: 8px 0; font-size: 12px; line-height: 1.5; opacity: 0.9;">
-                                    Please close this window and try again. If the problem persists:<br>
-                                    1. Check the <strong>Storybook</strong> output panel for detailed logs<br>
-                                    2. Make sure dependencies are installed: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm install</code><br>
-                                    3. Ensure Storybook is configured: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npx storybook@latest init</code><br>
-                                    4. Try manually running: <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 3px;">npm run storybook</code>
-                                </p>
-                            </div>
-                        \`;
-                    }
-                });
-        }
-
-        // Start checking server availability
-        checkInterval = setInterval(checkServer, 1000);
-        checkServer(); // Check immediately
+        // Extension posts a message when the server is ready
+        window.addEventListener('message', event => {
+            const message = event.data;
+            if (message.command === 'load') {
+                loadingText.textContent = 'Loading ${componentName} stories...';
+                iframe.src = message.url;
+                iframe.style.display = 'block';
+                iframe.onload = () => { loading.style.display = 'none'; };
+                // Fallback: hide spinner after 3s if onload doesn't fire (SPA routing)
+                setTimeout(() => { loading.style.display = 'none'; }, 3000);
+            } else if (message.command === 'error') {
+                loading.innerHTML = \`
+                    <div class="error">
+                        <strong>Storybook failed to start</strong>
+                        <p style="margin: 12px 0 8px 0; font-size: 13px; line-height: 1.5;">\${message.text}</p>
+                        <p style="margin: 8px 0; font-size: 12px; line-height: 1.5; opacity: 0.9;">
+                            Check the <strong>Storybook</strong> output panel for detailed logs.
+                        </p>
+                    </div>
+                \`;
+            }
+        });
     </script>
 </body>
 </html>`;

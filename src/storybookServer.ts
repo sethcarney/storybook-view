@@ -121,10 +121,19 @@ export class StorybookServer {
 
       console.log("[Storybook] Starting Storybook server...");
 
-      this.storybookProcess = spawn(pm, ["run", "storybook"], {
+      const isWindows = process.platform === "win32";
+      // npm and pnpm require "--" to forward args to the script; yarn and bun do not
+      const noOpenArgs = (pm === "npm" || pm === "pnpm")
+        ? ["run", "storybook", "--", "--no-open"]
+        : ["run", "storybook", "--no-open"];
+      this.storybookProcess = spawn(pm, noOpenArgs, {
         cwd: this.workspacePath,
         shell: true,
-        stdio: ["ignore", "pipe", "pipe"]
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env },
+        // On Unix, detached=true makes the shell a process group leader so we
+        // can kill the entire tree (shell + npm + storybook node process)
+        detached: !isWindows
       });
 
       console.log(`[Storybook] Process spawned (PID: ${this.storybookProcess.pid})`);
@@ -136,7 +145,7 @@ export class StorybookServer {
       this.outputChannel?.appendLine("=== Starting Storybook Server ===");
       this.outputChannel?.appendLine(`Working directory: ${this.workspacePath}`);
       this.outputChannel?.appendLine(`Port: ${this.port}`);
-      this.outputChannel?.appendLine(`Command: ${pm} run storybook`);
+      this.outputChannel?.appendLine(`Command: ${pm} ${noOpenArgs.join(" ")}`);
       this.outputChannel?.appendLine("=====================================\n");
       this.outputChannel?.show(true); // Show but preserve focus on editor
 
@@ -174,36 +183,8 @@ export class StorybookServer {
           this.outputChannel?.append(this.stripAnsi(output));
         }
 
-        // Look for Storybook server start message with more flexible detection
-        // Storybook 7+ uses different output formats, so check for multiple patterns
-        if (!serverStarted) {
-          const isStarted =
-            output.includes("started") ||
-            output.includes("Local:") ||
-            output.includes("localhost:") ||
-            output.match(/http:\/\/[^\s]+:\d+/) ||
-            (output.includes("Storybook") && output.match(/\d{1,5}/)) ||
-            output.includes("serving static files from");
-
-          if (isStarted) {
-            serverStarted = true;
-            clearInterval(pollInterval);
-            // Extract port from output if present
-            const portMatch = output.match(/:(\d+)/);
-            if (portMatch) {
-              this.port = parseInt(portMatch[1], 10);
-            }
-            console.log(`[Storybook] Server detected as started via stdout on port ${this.port}`);
-
-            // Stop showing output once server is up
-            if (this.showingOutput) {
-              this.outputChannel?.appendLine("\n=== Storybook Server Ready ===");
-              this.showingOutput = false;
-            }
-
-            resolve(this.port);
-          }
-        }
+        // Startup detection is handled exclusively by HTTP polling below,
+        // which is more reliable than stdout parsing across different frameworks.
       });
 
       this.storybookProcess.stderr?.on("data", (data) => {
@@ -292,11 +273,19 @@ export class StorybookServer {
             resolve();
           }, 2000);
         } else {
-          // Unix-like systems
-          this.storybookProcess.kill();
+          // Unix-like systems: kill the entire process group
+          if (pid) {
+            try {
+              process.kill(-pid, "SIGTERM");
+            } catch {
+              // Process may have already exited
+              this.storybookProcess?.kill();
+            }
+          } else {
+            this.storybookProcess.kill();
+          }
           this.outputChannel?.appendLine("\n=== Storybook Server Stopped ===");
           this.storybookProcess = undefined;
-          // Give it a moment to clean up
           setTimeout(() => resolve(), 500);
         }
       } else {
