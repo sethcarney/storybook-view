@@ -14,9 +14,7 @@ export class StorybookServer {
   private showingOutput: boolean = false;
 
   private constructor(extensionPath: string) {
-    // Get the workspace path for Storybook
-    this.workspacePath = this.getStorybookWorkspacePath();
-
+    this.workspacePath = '';
     // Create output channel for Storybook logs
     this.outputChannel = vscode.window.createOutputChannel("Storybook");
   }

@@ -6,10 +6,12 @@ async function main() {
     const extensionDevelopmentPath = path.resolve(__dirname, '../../');
     const extensionTestsPath = path.resolve(__dirname, './suite/index');
 
+    const testWorkspace = path.resolve(extensionDevelopmentPath, 'test-apps/test-app-react');
+
     await runTests({
       extensionDevelopmentPath,
       extensionTestsPath,
-      launchArgs: ['--disable-extensions'],
+      launchArgs: [testWorkspace, '--disable-extensions'],
     });
   } catch (err) {
     console.error('Failed to run tests:', err);
