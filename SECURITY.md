@@ -13,7 +13,7 @@ We take security vulnerabilities seriously. Please follow responsible disclosure
 
 ### How to Report
 
-Use [GitHub Security Advisories](../../security/advisories/new) to create a private advisory — this is the preferred method as it keeps the report confidential and allows coordinated disclosure.
+Use [GitHub Security Advisories](https://github.com/sethcarney/storybook-view/security/advisories/new) to create a private advisory — this is the preferred method as it keeps the report confidential and allows coordinated disclosure.
 
 Please include:
 - A description of the vulnerability and its potential impact
