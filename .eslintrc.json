@@ -21,8 +21,5 @@
     "dist",
     "**/*.d.ts",
     "test-apps"
-  ],
-  "extends": [
-    "plugin:storybook/recommended"
   ]
 }
