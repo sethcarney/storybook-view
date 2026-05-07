@@ -2,15 +2,14 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*.*.*'
+    branches: [main]
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Create Release
+    name: Check version and release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,25 +17,50 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Read version from package.json
+        id: pkg
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "v${{ steps.pkg.outputs.version }}" &>/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release v${{ steps.pkg.outputs.version }} already exists — skipping."
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No release for v${{ steps.pkg.outputs.version }} — will publish."
+          fi
+
       - uses: oven-sh/setup-bun@v2
+        if: steps.check.outputs.exists == 'false'
         with:
           bun-version: latest
 
       - name: Install dependencies
+        if: steps.check.outputs.exists == 'false'
         run: bun install
 
-      - name: Compile TypeScript
-        run: bun run compile
-
-      - name: Lint
-        run: bun run lint
+      - name: Compile and lint
+        if: steps.check.outputs.exists == 'false'
+        run: bun run compile && bun run lint
 
       - name: Package extension
+        if: steps.check.outputs.exists == 'false'
         run: bun run package
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: '*.vsix'
-          generate_release_notes: true
-          fail_on_unmatched_files: true
+        if: steps.check.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.pkg.outputs.version }}" \
+            *.vsix \
+            --title "v${{ steps.pkg.outputs.version }}" \
+            --generate-notes
+
+      - name: Publish to VS Marketplace
+        if: steps.check.outputs.exists == 'false'
+        run: bunx vsce publish --no-dependencies --pat ${{ secrets.VSCE_PAT }}
