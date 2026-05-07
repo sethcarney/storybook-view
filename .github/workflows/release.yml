@@ -60,7 +60,3 @@ jobs:
             *.vsix \
             --title "v${{ steps.pkg.outputs.version }}" \
             --generate-notes
-
-      - name: Publish to VS Marketplace
-        if: steps.check.outputs.exists == 'false'
-        run: bunx vsce publish --no-dependencies --pat ${{ secrets.VSCE_PAT }}
