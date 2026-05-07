@@ -4,6 +4,11 @@ import * as vscode from 'vscode';
 suite('Extension Test Suite', () => {
   vscode.window.showInformationMessage('Running extension tests.');
 
+  suiteSetup(async () => {
+    const ext = vscode.extensions.getExtension('sethssoftware.storybook-view');
+    await ext?.activate();
+  });
+
   test('Extension should be present', () => {
     assert.ok(
       vscode.extensions.getExtension('sethssoftware.storybook-view'),
