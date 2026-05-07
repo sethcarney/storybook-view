@@ -65,9 +65,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          vsix_file=$(ls *.vsix | head -1)
+          bundle_name="${vsix_file%.vsix}.sigstore.json"
+          cp "${{ steps.attest.outputs.bundle-path }}" "$bundle_name"
           gh release create "v${{ steps.pkg.outputs.version }}" \
-            *.vsix \
-            "${{ steps.attest.outputs.bundle-path }}" \
+            "$vsix_file" \
+            "$bundle_name" \
             --title "v${{ steps.pkg.outputs.version }}" \
             --generate-notes
 
