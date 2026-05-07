@@ -14,9 +14,7 @@ export class StorybookServer {
   private showingOutput: boolean = false;
 
   private constructor(extensionPath: string) {
-    // Get the workspace path for Storybook
-    this.workspacePath = this.getStorybookWorkspacePath();
-
+    this.workspacePath = '';
     // Create output channel for Storybook logs
     this.outputChannel = vscode.window.createOutputChannel("Storybook");
   }
@@ -133,6 +131,7 @@ export class StorybookServer {
         stdio: ["ignore", "pipe", "pipe"],
         // Use env var for telemetry opt-out — works across all frameworks
         // (Angular's ng builder doesn't forward unknown CLI flags)
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: "1" },
         // On Unix, detached=true makes the shell a process group leader so we
         // can kill the entire tree (shell + npm + storybook node process)
