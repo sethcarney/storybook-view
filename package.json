@@ -24,7 +24,7 @@
     "development",
     "testing"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "icon": "icon/icon.png",
   "engines": {
     "vscode": "^1.74.0",
