@@ -2,6 +2,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/sethcarney/storybook-view)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sethcarney/storybook-view/badge)](https://securityscorecards.dev/viewer/?uri=github.com/sethcarney/storybook-view)
 
 Preview React components with Storybook directly in VSCode.
 
