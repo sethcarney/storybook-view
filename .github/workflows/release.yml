@@ -54,6 +54,7 @@ jobs:
         run: bun run package
 
       - name: Generate provenance attestation
+        id: attest
         if: steps.check.outputs.exists == 'false'
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
@@ -66,6 +67,7 @@ jobs:
         run: |
           gh release create "v${{ steps.pkg.outputs.version }}" \
             *.vsix \
+            "${{ steps.attest.outputs.bundle-path }}" \
             --title "v${{ steps.pkg.outputs.version }}" \
             --generate-notes
 
