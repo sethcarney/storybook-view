@@ -8,16 +8,16 @@ permissions:
   contents: read
 
 jobs:
-  release:
-    name: Check version and release
+  check:
+    name: Check if release needed
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      id-token: write
-      attestations: write
-
+      contents: read
+    outputs:
+      exists: ${{ steps.check.outputs.exists }}
+      version: ${{ steps.pkg.outputs.version }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Read version from package.json
         id: pkg
@@ -36,49 +36,83 @@ jobs:
             echo "No release for v${{ steps.pkg.outputs.version }} — will publish."
           fi
 
+  build:
+    name: Build extension
+    needs: check
+    if: needs.check.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        if: steps.check.outputs.exists == 'false'
         with:
           bun-version: latest
 
       - name: Install dependencies
-        if: steps.check.outputs.exists == 'false'
         run: bun install
 
       - name: Compile and lint
-        if: steps.check.outputs.exists == 'false'
         run: bun run compile && bun run lint
 
       - name: Package extension
-        if: steps.check.outputs.exists == 'false'
         run: bun run package
 
-      - name: Generate provenance attestation
-        id: attest
-        if: steps.check.outputs.exists == 'false'
-        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
-        with:
-          subject-path: '*.vsix'
+      - name: Generate artifact hashes
+        id: hash
+        run: |
+          set -euo pipefail
+          echo "hashes=$(sha256sum *.vsix | base64 -w0)" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release
-        if: steps.check.outputs.exists == 'false'
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: vsix
+          path: '*.vsix'
+          if-no-files-found: error
+
+  provenance:
+    name: Generate SLSA provenance
+    needs: [check, build]
+    if: needs.check.outputs.exists == 'false'
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: "${{ needs.build.outputs.hashes }}"
+      upload-assets: false
+
+  release:
+    name: Create GitHub release
+    needs: [check, build, provenance]
+    if: needs.check.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+        with:
+          name: vsix
+
+      - name: Download provenance
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+        with:
+          name: ${{ needs.provenance.outputs.provenance-name }}
+
+      - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ steps.pkg.outputs.version }}" \
+          gh release create "v${{ needs.check.outputs.version }}" \
             *.vsix \
-            "${{ steps.attest.outputs.bundle-path }}" \
-            --title "v${{ steps.pkg.outputs.version }}" \
-            --generate-notes
+            *.intoto.jsonl \
+            --title "v${{ needs.check.outputs.version }}" \
+            --generate-notes \
+            --repo ${{ github.repository }}
 
-      - name: Publish to VS Marketplace
-        if: steps.check.outputs.exists == 'false'
-        run: |
-          output=$(bunx vsce publish --no-dependencies --pat ${{ secrets.VSCE_PAT }} 2>&1)
-          exit_code=$?
-          echo "$output"
-          if [ $exit_code -ne 0 ] && echo "$output" | grep -q "already exists"; then
-            echo "Version already on marketplace — skipping."
-            exit 0
-          fi
-          exit $exit_code
