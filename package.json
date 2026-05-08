@@ -115,7 +115,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "pretest": "bun run compile && bun run lint",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src",
     "test": "node ./out/test/runTest.js",
     "package": "bun run clean && bun run compile && bunx vsce package --no-dependencies",
     "install-extension": "code --install-extension storybook-view-1.1.0.vsix",
