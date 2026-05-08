@@ -1,6 +1,8 @@
 # Storybook View for VSCode
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/sethcarney/storybook-view)
+[![VS Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/SethsSoftware.storybook-view.svg?label=version)](https://marketplace.visualstudio.com/items?itemName=SethsSoftware.storybook-view)
+[![VS Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/SethsSoftware.storybook-view.svg)](https://marketplace.visualstudio.com/items?itemName=SethsSoftware.storybook-view)
+[![VS Marketplace Rating](https://img.shields.io/visual-studio-marketplace/r/SethsSoftware.storybook-view.svg)](https://marketplace.visualstudio.com/items?itemName=SethsSoftware.storybook-view)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sethcarney/storybook-view/badge)](https://securityscorecards.dev/viewer/?uri=github.com/sethcarney/storybook-view)
 
