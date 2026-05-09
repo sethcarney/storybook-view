@@ -339,7 +339,7 @@ On Windows, uses `taskkill /pid /f /t` to kill entire process tree, not just par
 
 ## Publishing Checklist
 
-Before publishing to VSCode Marketplace:
+Before creating a GitHub release:
 
 1. Update `publisher` in package.json with your publisher ID
 2. Update repository URLs (replace `yourusername`)
@@ -348,7 +348,7 @@ Before publishing to VSCode Marketplace:
 5. Test thoroughly in Extension Development Host
 6. Run `npm run package` to create .vsix
 7. Test .vsix installation: `code --install-extension storybook-view-1.0.0.vsix`
-8. Use `vsce publish` to publish (requires Personal Access Token)
+8. Download the `.vsix` from the GitHub release and upload it manually to the VS Code Marketplace
 
 ## Version 1.0.0 Features
 

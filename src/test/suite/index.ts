@@ -1,5 +1,5 @@
 import * as path from 'path';
-import * as Mocha from 'mocha';
+import Mocha from 'mocha';
 import { readdirSync } from 'fs';
 
 export function run(): Promise<void> {
@@ -14,7 +14,7 @@ export function run(): Promise<void> {
     const files = readdirSync(testsRoot).filter(f => f.endsWith('.test.js'));
     files.forEach(f => mocha.addFile(path.resolve(testsRoot, f)));
     try {
-      mocha.run(failures => {
+      mocha.run((failures: number) => {
         if (failures > 0) {
           reject(new Error(`${failures} tests failed.`));
         } else {
