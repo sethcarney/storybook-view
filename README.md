@@ -1,10 +1,12 @@
 # Storybook View for VSCode
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/sethcarney/storybook-view)
+[![VS Marketplace Version](https://vsmarketplacebadges.dev/version/SethsSoftware.storybook-view.svg)](https://marketplace.visualstudio.com/items?itemName=SethsSoftware.storybook-view)
+[![VS Marketplace Installs](https://vsmarketplacebadges.dev/installs/SethsSoftware.storybook-view.svg)](https://marketplace.visualstudio.com/items?itemName=SethsSoftware.storybook-view)
+[![VS Marketplace Rating](https://vsmarketplacebadges.dev/rating/SethsSoftware.storybook-view.svg)](https://marketplace.visualstudio.com/items?itemName=SethsSoftware.storybook-view)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sethcarney/storybook-view/badge)](https://securityscorecards.dev/viewer/?uri=github.com/sethcarney/storybook-view)
 
-Preview React components with Storybook directly in VSCode.
+Preview React, Vue, Svelte, and Angular components with Storybook directly in VSCode.
 
 ![Storybook View Demo](https://raw.githubusercontent.com/sethcarney/storybook-view/main/images/demo-recording.gif)
 
@@ -23,7 +25,7 @@ Requires Storybook in your project:
 npx storybook@latest init
 ```
 
-1. Open a `.stories.tsx` or `.stories.jsx` file
+1. Open a `.stories.tsx`, `.stories.jsx`, `.stories.vue`, or `.stories.svelte` file
 2. Click the eye icon in the editor toolbar
 3. Preview opens with all component stories
 
@@ -93,7 +95,7 @@ The Storybook server automatically stops after a period of inactivity to save sy
 - Leave empty if Storybook is in the workspace root
 
 **Component not showing:**
-- Ensure `.stories.tsx` file exists
+- Ensure a `.stories` file exists for the component
 - Restart Storybook via Command Palette
 
 ## Requirements
