@@ -9,20 +9,20 @@
   "dependencies": {
     "@angular/common": "^21.2.12",
     "@angular/compiler": "^21.2.12",
-    "@angular/core": "^17.3.0",
-    "@angular/platform-browser": "^21.2.12",
+    "@angular/core": "^21.2.13",
+    "@angular/platform-browser": "^21.2.13",
     "rxjs": "^7.8.1",
     "tslib": "^2.6.2",
     "zone.js": "^0.14.4"
   },
   "devDependencies": {
-    "@angular/cli": "^21.2.10",
-    "@angular/compiler-cli": "^21.2.12",
-    "@angular-devkit/build-angular": "^21.2.10",
+    "@angular/cli": "^21.2.11",
+    "@angular/compiler-cli": "^21.2.13",
+    "@angular-devkit/build-angular": "^21.2.11",
     "@babel/runtime": "^7.24.0",
-    "@storybook/addon-docs": "^10.3.6",
-    "@storybook/angular": "^10.3.6",
-    "storybook": "^10.3.6",
+    "@storybook/addon-docs": "^10.4.0",
+    "@storybook/angular": "^10.4.0",
+    "storybook": "^10.4.0",
     "typescript": "^6.0.3"
   }
 }
