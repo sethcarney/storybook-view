@@ -13,7 +13,7 @@
     "@angular/platform-browser": "^21.2.13",
     "rxjs": "^7.8.1",
     "tslib": "^2.6.2",
-    "zone.js": "^0.14.4"
+    "zone.js": "^0.16.2"
   },
   "devDependencies": {
     "@angular/cli": "^21.2.11",
