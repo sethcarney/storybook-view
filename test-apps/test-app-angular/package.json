@@ -16,9 +16,9 @@
     "zone.js": "^0.14.4"
   },
   "devDependencies": {
-    "@angular/cli": "^21.2.11",
-    "@angular/compiler-cli": "^21.2.13",
-    "@angular-devkit/build-angular": "^21.2.11",
+    "@angular/cli": "^21.2.12",
+    "@angular/compiler-cli": "^21.2.14",
+    "@angular-devkit/build-angular": "^21.2.12",
     "@babel/runtime": "^7.24.0",
     "@storybook/addon-docs": "^10.4.0",
     "@storybook/angular": "^10.4.0",
