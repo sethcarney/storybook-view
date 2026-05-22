@@ -28,7 +28,7 @@
         "@angular/platform-browser": "^21.2.13",
         "rxjs": "^7.8.1",
         "tslib": "^2.6.2",
-        "zone.js": "^0.14.4",
+        "zone.js": "^0.16.2",
       },
       "devDependencies": {
         "@angular-devkit/build-angular": "^21.2.11",
@@ -2519,7 +2519,7 @@
 
     "zod-validation-error": ["zod-validation-error@4.0.2", "", { "peerDependencies": { "zod": "^3.25.0 || ^4.0.0" } }, "sha512-Q6/nZLe6jxuU80qb/4uJ4t5v2VEZ44lzQjPDhYJNztRQ4wyWc6VF3D3Kb/fAuPetZQnhS3hnajCf9CsWesghLQ=="],
 
-    "zone.js": ["zone.js@0.14.10", "", {}, "sha512-YGAhaO7J5ywOXW6InXNlLmfU194F8lVgu7bRntUF3TiG8Y3nBK0x1UJJuHUP/e8IyihkjCYqhCScpSwnlaSRkQ=="],
+    "zone.js": ["zone.js@0.16.2", "", {}, "sha512-Eky7p2Z1Ig3NnbfodSPoARCjKBSTFMnE/ACsP1L/XJEfY4SdOFce19BsUCWVwL6K5ABZFy5J3bjcMWffX+YM3Q=="],
 
     "@angular-devkit/build-angular/autoprefixer": ["autoprefixer@10.4.27", "", { "dependencies": { "browserslist": "^4.28.1", "caniuse-lite": "^1.0.30001774", "fraction.js": "^5.3.4", "picocolors": "^1.1.1", "postcss-value-parser": "^4.2.0" }, "peerDependencies": { "postcss": "^8.1.0" }, "bin": { "autoprefixer": "bin/autoprefixer" } }, "sha512-NP9APE+tO+LuJGn7/9+cohklunJsXWiaWEfV3si4Gi/XHDwVNgkwr1J3RQYFIvPy76GmJ9/bW8vyoU1LcxwKHA=="],
 
