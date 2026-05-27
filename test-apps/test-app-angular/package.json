@@ -7,18 +7,18 @@
     "build-storybook": "ng run angular-storybook-test-app:build-storybook"
   },
   "dependencies": {
-    "@angular/common": "^21.2.12",
-    "@angular/compiler": "^21.2.12",
-    "@angular/core": "^21.2.13",
+    "@angular/common": "^21.2.14",
+    "@angular/compiler": "^21.2.14",
+    "@angular/core": "^21.2.14",
     "@angular/platform-browser": "^21.2.13",
     "rxjs": "^7.8.1",
     "tslib": "^2.6.2",
-    "zone.js": "^0.14.4"
+    "zone.js": "^0.16.2"
   },
   "devDependencies": {
-    "@angular/cli": "^21.2.11",
-    "@angular/compiler-cli": "^21.2.13",
-    "@angular-devkit/build-angular": "^21.2.11",
+    "@angular/cli": "^21.2.12",
+    "@angular/compiler-cli": "^21.2.14",
+    "@angular-devkit/build-angular": "^21.2.12",
     "@babel/runtime": "^7.24.0",
     "@storybook/addon-docs": "^10.4.0",
     "@storybook/angular": "^10.4.0",
