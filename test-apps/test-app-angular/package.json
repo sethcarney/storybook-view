@@ -16,13 +16,13 @@
     "zone.js": "^0.16.2"
   },
   "devDependencies": {
-    "@angular/cli": "^22.0.0",
-    "@angular/compiler-cli": "^22.0.0",
-    "@angular-devkit/build-angular": "^22.0.0",
+    "@angular/cli": "^22.0.1",
+    "@angular/compiler-cli": "^22.0.1",
+    "@angular-devkit/build-angular": "^22.0.1",
     "@babel/runtime": "^7.29.7",
-    "@storybook/addon-docs": "^10.4.2",
-    "@storybook/angular": "^10.4.2",
-    "storybook": "^10.4.2",
+    "@storybook/addon-docs": "^10.4.4",
+    "@storybook/angular": "^10.4.4",
+    "storybook": "^10.4.4",
     "typescript": "^6.0.3"
   }
 }
