@@ -7,7 +7,7 @@
     "build-storybook": "ng run angular-storybook-test-app:build-storybook"
   },
   "dependencies": {
-    "@angular/common": "^22.0.6",
+    "@angular/common": "^22.0.8",
     "@angular/compiler": "^22.0.7",
     "@angular/core": "^22.0.6",
     "@angular/platform-browser": "^22.0.7",
