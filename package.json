@@ -127,13 +127,13 @@
     "@types/mocha": "^10.0.6",
     "@types/node": "^26.1.0",
     "@types/vscode": "^1.125.0",
-    "@typescript-eslint/eslint-plugin": "^8.62.1",
-    "@typescript-eslint/parser": "^8.62.1",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
     "@vscode/test-electron": "^3.0.0",
-    "eslint": "^10.6.0",
+    "eslint": "^10.7.0",
     "mocha": "^11",
-    "prettier": "3.9.4",
-    "typescript": "^6.0.3",
+    "prettier": "3.9.6",
+    "typescript": "^7.0.2",
     "vsce": "^2.15.0"
   }
 }
