@@ -6,10 +6,66 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      dev-dependencies:
-        dependency-type: development
+      # Must-match families first: Dependabot assigns a dependency to the first
+      # group it matches, so these win over the catch-all below. None of them
+      # set `update-types`, so majors stay grouped too — these packages are
+      # released as one unit upstream and a split PR breaks the build.
+      angular:
+        patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+      storybook:
+        patterns:
+          - "storybook"
+          - "@storybook/*"
+          - "eslint-plugin-storybook"
+      typescript-eslint:
+        patterns:
+          - "@typescript-eslint/*"
+          - "typescript-eslint"
+      react:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      # Catch-all for everything else. Minor and patch only, so majors still
+      # arrive as individual PRs. The families above are excluded explicitly so
+      # they can never be peeled back out into per-package PRs.
+      all-dependencies:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - "@angular/*"
+          - "@angular-devkit/*"
+          - "storybook"
+          - "@storybook/*"
+          - "eslint-plugin-storybook"
+          - "@typescript-eslint/*"
+          - "typescript-eslint"
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # init, autobuild, analyze and upload-sarif are four dependencies to
+      # Dependabot but one repo upstream, and must be pinned to the same SHA.
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
+      actions:
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - "github/codeql-action*"
