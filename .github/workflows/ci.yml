@@ -20,8 +20,11 @@ jobs:
         with:
           bun-version: latest
 
+      # Skip optional native bindings (e.g. Vite/rolldown platform packages from
+      # the test-apps workspace). They are not needed to build, lint, or test the
+      # extension, and their downloads are a flaky source of CI failures.
       - name: Install dependencies
-        run: bun install
+        run: bun install --omit=optional
 
       - name: Compile TypeScript
         run: bun run compile
@@ -39,8 +42,10 @@ jobs:
         with:
           bun-version: latest
 
+      # See note in the build job: optional native bindings are unnecessary for
+      # the extension test run and cause flaky install failures.
       - name: Install dependencies
-        run: bun install
+        run: bun install --omit=optional
 
       - name: Compile TypeScript
         run: bun run compile
