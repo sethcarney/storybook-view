@@ -20,7 +20,7 @@
     "@storybook/svelte-vite": "^10.5.5",
     "@sveltejs/vite-plugin-svelte": "^7.2.0",
     "storybook": "^10.5.5",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.2.0"
   }
 }
