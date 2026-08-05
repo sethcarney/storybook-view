@@ -5,6 +5,17 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # TypeScript 7 is the native rewrite: its npm package drops the classic
+      # JS compiler API (`require('typescript')` exports only `version` and
+      # `versionMajorMinor`), so every API consumer we depend on breaks.
+      # typescript-eslint refuses to load against it and no released version
+      # supports it yet — support is tracked for TS >=7.1 in
+      # https://github.com/typescript-eslint/typescript-eslint/issues/10940.
+      # Drop this ignore once typescript-eslint ships TS 7 support.
+      - dependency-name: typescript
+        update-types:
+          - version-update:semver-major
     groups:
       # Must-match families first: Dependabot assigns a dependency to the first
       # group it matches, so these win over the catch-all below. None of them
