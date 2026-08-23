@@ -2,5 +2,6 @@ node_modules
 out
 *storybook.log
 storybook-static
-.claude
+.claude/*
+!.claude/settings.json
 .angular
