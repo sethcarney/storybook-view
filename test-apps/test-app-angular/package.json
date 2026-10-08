@@ -20,9 +20,9 @@
     "@angular/compiler-cli": "^22.2.0",
     "@angular-devkit/build-angular": "^22.2.0",
     "@babel/runtime": "^8.0.5",
-    "@storybook/addon-docs": "^10.6.0",
-    "@storybook/angular": "^10.6.0",
-    "storybook": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.1",
+    "@storybook/angular": "^10.6.1",
+    "storybook": "^10.6.1",
     "typescript": "^6.0.3"
   }
 }
